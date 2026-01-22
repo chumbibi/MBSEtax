@@ -25,10 +25,7 @@ namespace MBSWeb
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                                                                 options.UseSqlServer(builder.Configuration.GetConnectionString("connectionstring")));
 
-            //builder.Services.AddIdentity<MBSUsers, MBSAccessRoles>()
-            //    .AddEntityFrameworkStores<ApplicationDbContext>()
-            //    .AddDefaultTokenProviders();
-
+        
             // ? SINGLE Identity registration
             builder.Services.AddIdentity<MBSUsers, MBSAccessRoles>(options =>
             {
