@@ -38,12 +38,22 @@ namespace MBSWeb.Controllers
             return StatusCode(result.StatusCode, result);
         }
 
+        //public async Task<MBSResponse> ResetPasswordAsync(string email, string newPassword)
+
         [HttpPost("resetpassword")]
-        public async Task<IActionResult> ResetPassword([FromQuery] string email)
+        public async Task<IActionResult> ResetPassword([FromQuery] ResetPasswordDto model)  
         {
-            var result = await _manager.ResetPasswordAsync(email);
+            var result = await _manager.ResetPasswordAsync(model); 
             return StatusCode(result.StatusCode, result);
         }
+
+        [HttpPost("forgetpassword")]
+        public async Task<IActionResult> ForgetPassword([FromQuery]string email)
+        {
+            var result = await _manager.ForgetPasswordAsync(email);
+            return StatusCode(result.StatusCode, result);
+        }
+
 
         [HttpDelete("unregister")]
         public async Task<IActionResult> Unregister([FromQuery] string email)
