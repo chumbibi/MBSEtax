@@ -25,8 +25,9 @@ namespace MBSWeb
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                                                                 options.UseSqlServer(builder.Configuration.GetConnectionString("connectionstring")));
 
-        
-            // ✅ SINGLE Identity registration
+            
+
+            // ? SINGLE Identity registration
             builder.Services.AddIdentity<MBSUsers, MBSAccessRoles>(options =>
             {
                 options.Password.RequireDigit = true;
