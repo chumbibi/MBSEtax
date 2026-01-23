@@ -76,7 +76,7 @@ namespace MBSWeb.Controllers
             return StatusCode(result.StatusCode, result);   
         }
         [HttpGet("searchcustomer")]
-        public async Task<IActionResult> SearchCustomersAsync(string searchTerm)
+        public async Task<IActionResult> SearchCustomersAsync(string? searchTerm)
         {
             var result = await _manager.SearchCustomersAsync(searchTerm);
             return StatusCode(result.StatusCode, result);

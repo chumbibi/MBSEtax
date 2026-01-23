@@ -188,17 +188,23 @@ namespace MBSWeb.Services.Repositories
                 return Fail($"Search failed: {ex.Message}");
             }
         }
-
-        public async Task<MBSResponse> SearchCustomersAsync(string searchTerm)
+        public async Task<MBSResponse> SearchCustomersAsync(string? searchTerm)
         {
             try
             {
+                // If search term is null/empty/whitespace, return all customers
                 if (string.IsNullOrWhiteSpace(searchTerm))
-                    return Fail("Search term cannot be empty");
+                {
+                    var allCustomers = await _context.Customers
+                        .OrderBy(c => c.CustomerCode)
+                        .ToListAsync();
+
+                    return Success("Customers retrieved successfully", allCustomers);
+                }
 
                 searchTerm = searchTerm.Trim();
 
-                // Base customer search
+                // Base customer search using CONTAINS logic
                 var customerQuery = _context.Customers
                     .Where(c =>
                         (!string.IsNullOrEmpty(c.CustomerCode) && c.CustomerCode.Contains(searchTerm)) ||
@@ -218,10 +224,10 @@ namespace MBSWeb.Services.Repositories
                           customer => customer.CustomerCode,
                           (code, customer) => customer);
 
-                // Union both result sets
+                // Merge and deduplicate results
                 var customers = await customerQuery
                     .Union(irnCustomersQuery)
-                    .OrderBy(c => c.CustomerName)
+                    .OrderBy(c => c.CustomerCode)
                     .ToListAsync();
 
                 return Success("Customers retrieved successfully", customers);
@@ -231,6 +237,8 @@ namespace MBSWeb.Services.Repositories
                 return Fail($"Search failed: {ex.Message}");
             }
         }
+
+      
 
         private static MBSResponse Success(string message, object? data = null) =>
             new()
