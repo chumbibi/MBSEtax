@@ -62,7 +62,13 @@ namespace MBSWeb.Managers
         public async Task<MBSResponse> UpdateCustomerAsync(string customerCode, CustomerDto model)
         {
             var result = await _customer.UpdateCustomerAsync(customerCode, model);
-            return result;  
+            return result;
+        }
+
+        public async Task<MBSResponse> SearchCustomersAsync(string searchTerm)
+        {
+            var result = await _customer.SearchCustomersAsync(searchTerm);
+            return result;
         }
     }
 }

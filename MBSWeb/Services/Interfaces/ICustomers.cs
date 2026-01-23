@@ -12,8 +12,9 @@ namespace MBSWeb.Services.Interfaces
         Task<MBSResponse> SearchForCustomerByPhoneAsync(string phone);
         Task<MBSResponse> SearchForCustomerByEmailAsync(string email);
         Task<MBSResponse> SearchForCustomerByIRNAsync(string irn);
-        Task<MBSResponse> SearchForCustomerByTINAsync(string tin);           
-        
+        Task<MBSResponse> SearchForCustomerByTINAsync(string tin);
+
+        Task<MBSResponse> SearchCustomersAsync(string searchTerm);
         Task<MBSResponse> GetAllCustomersAsync();
     }
 }

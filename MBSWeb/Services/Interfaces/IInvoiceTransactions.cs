@@ -11,5 +11,8 @@ namespace MBSWeb.Services.Interfaces
         Task<MBSResponse> GetInvoicesByCustomerCode(int companyid, string customerCode);
         Task<MBSResponse> GetInvoicesByDateRange(DateRangeDto model);
         Task<MBSResponse> UpdateInvoiceByIRNAsync(string irn, PaymentStatusDto model);
+
+        Task<MBSResponse> DownloadInvoiceByNumber(int companyid, string invoiceNumber);
+
     }
 }

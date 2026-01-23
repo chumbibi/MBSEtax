@@ -189,6 +189,49 @@ namespace MBSWeb.Services.Repositories
             }
         }
 
+        public async Task<MBSResponse> SearchCustomersAsync(string searchTerm)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return Fail("Search term cannot be empty");
+
+                searchTerm = searchTerm.Trim();
+
+                // Base customer search
+                var customerQuery = _context.Customers
+                    .Where(c =>
+                        (!string.IsNullOrEmpty(c.CustomerCode) && c.CustomerCode.Contains(searchTerm)) ||
+                        (!string.IsNullOrEmpty(c.CustomerName) && c.CustomerName.Contains(searchTerm)) ||
+                        (!string.IsNullOrEmpty(c.Email) && c.Email.Contains(searchTerm)) ||
+                        (!string.IsNullOrEmpty(c.Telephone) && c.Telephone.Contains(searchTerm)) ||
+                        (!string.IsNullOrEmpty(c.TIN) && c.TIN.Contains(searchTerm))
+                    );
+
+                // IRN-based customer lookup
+                var irnCustomersQuery = _context.InvoiceTransactions
+                    .Where(i => i.IRN.Contains(searchTerm))
+                    .Select(i => i.CustomerCode)
+                    .Distinct()
+                    .Join(_context.Customers,
+                          code => code,
+                          customer => customer.CustomerCode,
+                          (code, customer) => customer);
+
+                // Union both result sets
+                var customers = await customerQuery
+                    .Union(irnCustomersQuery)
+                    .OrderBy(c => c.CustomerName)
+                    .ToListAsync();
+
+                return Success("Customers retrieved successfully", customers);
+            }
+            catch (Exception ex)
+            {
+                return Fail($"Search failed: {ex.Message}");
+            }
+        }
+
         private static MBSResponse Success(string message, object? data = null) =>
             new()
             {
