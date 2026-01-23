@@ -9,7 +9,8 @@ namespace MBSWeb.Services.Interfaces
         Task<MBSResponse> GetUserRolesAsync();
         Task<MBSResponse> GetRoleByUserAsync(string email);
         Task<MBSResponse> ChangePasswordAsync(ChangePasswordDto model);
-        Task<MBSResponse> ResetPasswordAsync(string email);
+        Task<MBSResponse> ForgetPasswordAsync(string email);
+        Task<MBSResponse> ResetPasswordAsync(ResetPasswordDto model);
         Task<MBSResponse> UnregisterUserAsync(string email);
         Task<MBSResponse> GetAllUsersAsync();
         Task<MBSResponse> GetUsersByEmailAsync(string email);

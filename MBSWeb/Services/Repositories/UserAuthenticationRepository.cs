@@ -106,18 +106,41 @@ namespace MBSWeb.Services.Repositories
             }
         }
 
-        public async Task<MBSResponse> ResetPasswordAsync(string email)
+        //public async Task<MBSResponse> ResetPasswordAsync(string email)
+        //{
+        //    try
+        //    {
+        //        var user = await _userManager.FindByEmailAsync(email);
+
+        //        if (user == null)
+        //            return Fail("User not found");
+
+        //        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        //        // Email Token to user logic would go here
+        //        return Success("Password reset token generated", token);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Fail($"Reset password failed: {ex.Message}");
+        //    }
+        //}
+
+        public async Task<MBSResponse> ResetPasswordAsync(ResetPasswordDto model)
         {
             try
             {
-                var user = await _userManager.FindByEmailAsync(email);
+                var user = await _userManager.FindByEmailAsync(model.email);
 
                 if (user == null)
                     return Fail("User not found");
 
-                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                // Email Token to user logic would go here
-                return Success("Password reset token generated", token);
+                await _userManager.RemovePasswordAsync(user);
+                var result = await _userManager.AddPasswordAsync(user, model.newPassword);
+
+                if (!result.Succeeded)
+                    return Fail("Password reset failed");
+
+                return Success("Password reset successful");
             }
             catch (Exception ex)
             {
@@ -218,5 +241,38 @@ namespace MBSWeb.Services.Repositories
                 Message = "Operation failed",
                 Data = error
             };
+
+
+        public async Task<MBSResponse> ForgetPasswordAsync(string email)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(email);
+
+                if (user == null)
+                    return Fail("User not found");
+
+                // Generate a temporary password
+                var tempPassword = $"Temp@{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+
+                // Remove old password and set new one
+                await _userManager.RemovePasswordAsync(user);
+                var result = await _userManager.AddPasswordAsync(user, tempPassword);
+
+                if (!result.Succeeded)
+                    return Fail("Failed to reset password");
+
+                // Send temporary password to user via email here
+                // await _emailService.SendTemporaryPasswordAsync(user.Email, tempPassword);
+
+                return Success("Temporary password generated and sent to email", tempPassword);
+            }
+            catch (Exception ex)
+            {
+                return Fail($"Forget password failed: {ex.Message}");
+            }
+        }
+
     }
 }
+

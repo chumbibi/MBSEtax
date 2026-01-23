@@ -3,16 +3,16 @@ using MBSWeb.Services.Interfaces;
 
 namespace MBSWeb.Managers
 {
-    public class UserAuthenticationManager  
+    public class UserAuthenticationManager
     {
         private readonly IUserAuthentication _userAuthenticationService;
         public UserAuthenticationManager(IUserAuthentication userAuthenticationService)
         {
             _userAuthenticationService = userAuthenticationService;
         }
-        public async  Task<MBSResponse> AuthenticateUserAsync(LoginDto model)
+        public async Task<MBSResponse> AuthenticateUserAsync(LoginDto model)
         {
-           var result = await _userAuthenticationService.AuthenticateUserAsync(model);
+            var result = await _userAuthenticationService.AuthenticateUserAsync(model);
             return result;
         }
 
@@ -51,11 +51,18 @@ namespace MBSWeb.Managers
             var result = await _userAuthenticationService.RegisterUserAsync(model);
             return result;
         }
-
-        public async Task<MBSResponse> ResetPasswordAsync(string email)
+        public async Task<MBSResponse> ForgetPasswordAsync(string email)
         {
-            var result = await _userAuthenticationService.ResetPasswordAsync(email);
+            var result = await _userAuthenticationService.ForgetPasswordAsync(email);
             return result;
+        }
+
+        public async Task<MBSResponse> ResetPasswordAsync(ResetPasswordDto model)
+        {
+
+            var result = await _userAuthenticationService.ResetPasswordAsync(model);
+            return result;
+
         }
 
         public async Task<MBSResponse> UnregisterUserAsync(string email)
