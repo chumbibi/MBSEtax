@@ -49,7 +49,7 @@ namespace MBSWeb
 
             //Register Managers
             builder.Services.AddScoped<UserAuthenticationManager>();
-             builder.Services.AddScoped<InvoiceTransactionManager>();
+            builder.Services.AddScoped<InvoiceTransactionManager>();
             builder.Services.AddScoped<CustomerManager>();
             builder.Services.AddScoped<CompanyManager>();
 

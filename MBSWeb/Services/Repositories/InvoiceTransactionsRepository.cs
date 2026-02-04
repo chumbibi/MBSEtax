@@ -20,20 +20,20 @@ using MigraDocCore.DocumentObjectModel.Tables;
 using MigraDocCore.Rendering;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.ColorSpaces.Companding; 
+using SixLabors.ImageSharp.ColorSpaces.Companding;
 
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
- 
+
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 //using TheArtOfDev.HtmlRenderer.PdfSharp;
- 
+
 using static MigraDocCore.DocumentObjectModel.MigraDoc.DocumentObjectModel.Shapes.ImageSource;
 using static System.Net.Mime.MediaTypeNames;
 using Color = MigraDocCore.DocumentObjectModel.Color;
@@ -49,17 +49,43 @@ namespace MBSWeb.Services.Repositories
         {
             _context = context;
         }
-
-        public async Task<MBSResponse> GetAllInvoicesByCompany(int companyid)
+   
+        public async Task<MBSResponse> GetAllInvoicesByCompany(int companyId, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
-                var invoices = await _context.InvoiceTransactions
-                    .Where(i => i.CompanyId == companyid)
+                // Safety checks
+                if (pageNumber <= 0)
+                    pageNumber = 1;
+
+                if (pageSize <= 0)
+                    pageSize = 10;
+
+                // Base query (do NOT execute yet)
+                var query = _context.InvoiceTransactions
+                    .Where(i => i.CompanyId == companyId);
+
+                // Total count (before pagination)
+                var totalRecords = await query.CountAsync();
+
+                // Paginated data
+                var invoices = await query
                     .OrderByDescending(i => i.InvoiceDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
 
-                return Success("Invoices retrieved successfully", invoices);
+                // Response payload
+                var responseData = new
+                {
+                    TotalRecords = totalRecords,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+                    Invoices = invoices
+                };
+
+                return Success("Invoices retrieved successfully", responseData);
             }
             catch (Exception ex)
             {
@@ -67,19 +93,45 @@ namespace MBSWeb.Services.Repositories
             }
         }
 
-        public async Task<MBSResponse> GetInvoiceByInvoiceNumber(int companyid, string invoiceNumber)
+
+       
+
+        public async Task<MBSResponse> GetInvoiceByInvoiceNumber( int companyId, string invoiceNumber, int pageNumber = 1,int pageSize = 10)
         {
             try
             {
-                var invoice = await _context.InvoiceTransactions
-                    .FirstOrDefaultAsync(i =>
-                        i.CompanyId == companyid &&
+                if (pageNumber <= 0)
+                    pageNumber = 1;
+
+                if (pageSize <= 0)
+                    pageSize = 10;
+
+                var query = _context.InvoiceTransactions
+                    .Where(i =>
+                        i.CompanyId == companyId &&
                         i.InvoiceNumber == invoiceNumber);
 
-                if (invoice == null)
+                var totalRecords = await query.CountAsync();
+
+                if (totalRecords == 0)
                     return Fail("Invoice not found");
 
-                return Success("Invoice retrieved successfully", invoice);
+                var invoices = await query
+                    .OrderByDescending(i => i.InvoiceDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var responseData = new
+                {
+                    TotalRecords = totalRecords,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+                    Invoices = invoices
+                };
+
+                return Success("Invoice(s) retrieved successfully", responseData);
             }
             catch (Exception ex)
             {
@@ -87,18 +139,44 @@ namespace MBSWeb.Services.Repositories
             }
         }
 
-        public async Task<MBSResponse> GetInvoiceItemsByInvoiceNumber(int companyid, string invoiceNumber)
+
+        public async Task<MBSResponse> GetInvoiceItemsByInvoiceNumber(int companyId, string invoiceNumber, int pageNumber = 1,int pageSize = 10)
         {
             try
             {
-                var items = await _context.ItemLines
+                // Safety checks
+                if (pageNumber <= 0)
+                    pageNumber = 1;
+
+                if (pageSize <= 0)
+                    pageSize = 10;
+
+                var query = _context.ItemLines
                     .Where(i =>
-                        i.CompanyId == companyid &&
-                        i.DocEntry == invoiceNumber)
+                        i.CompanyId == companyId &&
+                        i.DocEntry == invoiceNumber);
+
+                var totalRecords = await query.CountAsync();
+
+                if (totalRecords == 0)
+                    return Fail("No invoice items found");
+
+                var items = await query
                     .OrderBy(i => i.LineNum)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
 
-                return Success("Invoice items retrieved successfully", items);
+                var responseData = new
+                {
+                    TotalRecords = totalRecords,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+                    Items = items
+                };
+
+                return Success("Invoice items retrieved successfully", responseData);
             }
             catch (Exception ex)
             {
@@ -106,18 +184,46 @@ namespace MBSWeb.Services.Repositories
             }
         }
 
-        public async Task<MBSResponse> GetInvoicesByCustomerCode(int companyid, string customerCode)
+
+        
+
+        public async Task<MBSResponse> GetInvoicesByCustomerCode( int companyId, string customerCode, int pageNumber = 1,int pageSize = 10)
         {
             try
             {
-                var invoices = await _context.InvoiceTransactions
+                // Safety checks
+                if (pageNumber <= 0)
+                    pageNumber = 1;
+
+                if (pageSize <= 0)
+                    pageSize = 10;
+
+                var query = _context.InvoiceTransactions
                     .Where(i =>
-                        i.CompanyId == companyid &&
-                        i.CustomerCode == customerCode)
+                        i.CompanyId == companyId &&
+                        i.CustomerCode == customerCode);
+
+                var totalRecords = await query.CountAsync();
+
+                if (totalRecords == 0)
+                    return Fail("No invoices found for this customer");
+
+                var invoices = await query
                     .OrderByDescending(i => i.InvoiceDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
 
-                return Success("Invoices retrieved successfully", invoices);
+                var responseData = new
+                {
+                    TotalRecords = totalRecords,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+                    Invoices = invoices
+                };
+
+                return Success("Invoices retrieved successfully", responseData);
             }
             catch (Exception ex)
             {
@@ -125,12 +231,20 @@ namespace MBSWeb.Services.Repositories
             }
         }
 
-        public async Task<MBSResponse> GetInvoicesByDateRange(DateRangeDto model)
+
+
+        public async Task<MBSResponse> GetInvoicesByDateRange(DateRangeDto model, int pageNumber = 1,int pageSize = 10)
         {
             try
             {
                 if (model.StartDate == null || model.EndDate == null)
                     return Fail("Invalid date range");
+
+                if (pageNumber <= 0)
+                    pageNumber = 1;
+
+                if (pageSize <= 0)
+                    pageSize = 10;
 
                 var query = _context.InvoiceTransactions.AsQueryable();
 
@@ -144,17 +258,34 @@ namespace MBSWeb.Services.Repositories
                     query = query.Where(i => i.CustomerCode == model.CustomerCode);
                 }
 
+                var totalRecords = await query.CountAsync();
+
+                if (totalRecords == 0)
+                    return Fail("No invoices found for the selected date range");
+
                 var invoices = await query
                     .OrderByDescending(i => i.InvoiceDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
 
-                return Success("Invoices retrieved successfully", invoices);
+                var responseData = new
+                {
+                    TotalRecords = totalRecords,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+                    Invoices = invoices
+                };
+
+                return Success("Invoices retrieved successfully", responseData);
             }
             catch (Exception ex)
             {
                 return Fail($"Failed to retrieve invoices: {ex.Message}");
             }
         }
+
 
         public async Task<MBSResponse> UpdateInvoiceByIRNAsync(string irn, PaymentStatusDto model)
         {
@@ -165,7 +296,7 @@ namespace MBSWeb.Services.Repositories
 
                 if (invoice == null)
                     return Fail("Invoice not found");
-               int paymentStatus =  0;
+                int paymentStatus = 0;
                 switch (model.PaymentStatus)
                 {
                     case PaymentStatus.Pending:
@@ -198,7 +329,7 @@ namespace MBSWeb.Services.Repositories
         {
             try
             {
-                
+
                 // 1. Create the PDF document
                 var document = new Document();
                 var section = document.AddSection();
@@ -213,12 +344,12 @@ namespace MBSWeb.Services.Repositories
                 var paragraph = section.AddParagraph("Original");
                 paragraph.Format.Font.Size = 8;
                 paragraph.Format.Font.Name = "Candara";
-                paragraph.Format.Font.Color = Colors.Black; 
+                paragraph.Format.Font.Color = Colors.Black;
                 paragraph.Format.Font.Bold = true;
                 paragraph.Format.SpaceBefore = "0.1cm";
                 paragraph.Format.SpaceAfter = "0.1cm";
                 paragraph.Format.Alignment = ParagraphAlignment.Center;
-                
+
 
 
 
@@ -235,7 +366,7 @@ namespace MBSWeb.Services.Repositories
                 // Insert Logo
 
                 var imagePath = Path.Combine(Environment.CurrentDirectory, $"{companyid.ToString()}.png");
-               // var signaturePath = Path.Combine(Environment.CurrentDirectory, "registrar.png");
+                // var signaturePath = Path.Combine(Environment.CurrentDirectory, "registrar.png");
 
                 using (var img = Image.Load(imagePath))
                 using (var ms = new MemoryStream())
@@ -327,7 +458,7 @@ namespace MBSWeb.Services.Repositories
                 var circlePen = new XPen(XColors.Maroon, 2); // Thin black outline for circles
                 var circleFill = XBrushes.White;              // White background
                 var squareFill = XBrushes.White;
- 
+
                 // === 6. Draw inner rectangle ===
                 double innerX = innerMargin;
                 double innerY = innerMargin;
@@ -336,12 +467,12 @@ namespace MBSWeb.Services.Repositories
 
                 gfx.DrawRectangle(innerPen, innerX, innerY, innerWidth, innerHeight);
 
-               
+
                 // === 8. Save and return PDF ===
                 string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyyMMddHHmmssfff}.pdf";
                 string filePath = Path.Combine(Environment.CurrentDirectory, "TranscriptDr", fileName);
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
- 
+
 
                 pdf.Info.Author = "James Hope University";
                 pdf.Info.Subject = "JHU School of Business";
@@ -372,7 +503,7 @@ namespace MBSWeb.Services.Repositories
                 return Fail($"Failed to update invoice: {ex.Message}");
             }
         }
-        
+
         private static MBSResponse Success(string message, object? data = null) =>
             new()
             {
@@ -389,6 +520,6 @@ namespace MBSWeb.Services.Repositories
                 Data = null
             };
 
-       
+
     }
 }

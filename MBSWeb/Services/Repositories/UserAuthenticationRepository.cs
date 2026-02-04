@@ -62,6 +62,28 @@ namespace MBSWeb.Services.Repositories
             }
         }
 
+        //public async Task<MBSResponse> AuthenticateUserAsync(LoginDto model)
+        //{
+        //    try
+        //    {
+        //        var user = await _userManager.FindByEmailAsync(model.UserName);
+
+        //        if (user == null)
+        //            return Fail("Invalid username or password");
+
+        //        var result = await _signInManager
+        //            .CheckPasswordSignInAsync(user, model.Password, false);
+
+        //        return result.Succeeded
+        //            ? Success("Authentication successful", user)
+        //            : Fail("Invalid username or password");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Fail($"Authentication error: {ex.Message}");
+        //    }
+        //}
+
         public async Task<MBSResponse> AuthenticateUserAsync(LoginDto model)
         {
             try
@@ -74,15 +96,26 @@ namespace MBSWeb.Services.Repositories
                 var result = await _signInManager
                     .CheckPasswordSignInAsync(user, model.Password, false);
 
-                return result.Succeeded
-                    ? Success("Authentication successful", user)
-                    : Fail("Invalid username or password");
+                if (!result.Succeeded)
+                    return Fail("Invalid username or password");
+
+                // This returns ONLY roles assigned to this user
+                var assignedRoles = await _userManager.GetRolesAsync(user);
+
+                return Success("Authentication successful", new
+                {
+                    UserId = user.Id,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    Roles = assignedRoles   // e.g. ["Admin"] or ["User"]
+                });
             }
             catch (Exception ex)
             {
                 return Fail($"Authentication error: {ex.Message}");
             }
         }
+
 
         public async Task<MBSResponse> ChangePasswordAsync(ChangePasswordDto model)
         {
