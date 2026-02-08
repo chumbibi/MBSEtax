@@ -26,7 +26,6 @@ using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-
  
 using System;
 using System.ComponentModel;
@@ -305,15 +304,11 @@ namespace MBSWeb.Services.Repositories
                 {
                     XImage watermark = XImage.FromFile(linePath);
 
-
-
-
                     double centerX = (pageWidth - 240) / 2;
                     double centerY = (pageHeight) / 4.5;
 
                     gfx.DrawImage(watermark, centerX, centerY, 240, 10);
                 }
-
 
                 // === Styles and dimensions ===
                 double outerBorderThickness = 2;
@@ -329,19 +324,18 @@ namespace MBSWeb.Services.Repositories
                 var squareFill = XBrushes.White;
  
                 // === 6. Draw inner rectangle ===
+
                 double innerX = innerMargin;
                 double innerY = innerMargin;
                 double innerWidth = pageWidth - 2 * innerMargin;
                 double innerHeight = pageHeight - 2 * innerMargin;
 
                 gfx.DrawRectangle(innerPen, innerX, innerY, innerWidth, innerHeight);
-
-               
+                
                 // === 8. Save and return PDF ===
                 string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyyMMddHHmmssfff}.pdf";
                 string filePath = Path.Combine(Environment.CurrentDirectory, "TranscriptDr", fileName);
-                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
- 
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!); 
 
                 pdf.Info.Author = "James Hope University";
                 pdf.Info.Subject = "JHU School of Business";
@@ -349,7 +343,6 @@ namespace MBSWeb.Services.Repositories
                 pdf.Info.CreationDate = DateTime.Now;
 
                 // Insert a QR Code
-
 
                 pdf.Save(filePath);
 
@@ -363,9 +356,8 @@ namespace MBSWeb.Services.Repositories
                 //    Data = fileBytes
                 //};
 
-
-
                 return Success("Invoice payment status updated successfully", invoiceNumber);
+
             }
             catch (Exception ex)
             {

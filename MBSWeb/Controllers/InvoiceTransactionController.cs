@@ -44,13 +44,13 @@ namespace MBSWeb.Controllers
         }
 
         [HttpPost("getinvoicesbydaterange")] 
-        public async Task<MBSResponse> GetInvoicesByDateRange(DateRangeDto model)
+        public async Task<MBSResponse> GetInvoicesByDateRange([FromBody] DateRangeDto model)
         {
             var result = await _manager.GetInvoicesByDateRange(model);
             return result;  
         }
         [HttpPut("updateinvoicebyirn")]
-        public async Task<MBSResponse> UpdateInvoiceByIRNAsync(string irn, PaymentStatusDto model)
+        public async Task<MBSResponse> UpdateInvoiceByIRNAsync(string irn, [FromBody]PaymentStatusDto model)
         {
             var result = await _manager.UpdateInvoiceByIRNAsync(irn, model);
             return result;  

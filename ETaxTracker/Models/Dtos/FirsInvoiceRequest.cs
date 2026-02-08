@@ -132,6 +132,12 @@ public class PostalAddress
 
     [JsonPropertyName("street_name")]
     public string StreetName { get; set; }
+
+    [JsonPropertyName("lga")]
+    public string? LGA { get; set; }
+
+    [JsonPropertyName("state")]
+    public string? State { get; set; }
 }
 
 public class InvoiceDeliveryPeriod

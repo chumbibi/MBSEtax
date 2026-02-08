@@ -7,5 +7,7 @@ namespace MBSWeb.Models.Entities
          public string? CompanyId { get; set; } // Which company the user belongs to
         //userName = FirstName
         public string? LastName { get; set; } // Surname
+
+        public  string? Role { get; set; }
     }
 }

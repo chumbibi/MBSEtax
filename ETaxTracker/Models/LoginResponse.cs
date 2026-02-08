@@ -12,4 +12,7 @@ namespace ETaxTracker.Models
         public string Version { get; set; }
         public int SessionTimeout { get; set; }
     }
+
+
+
 }

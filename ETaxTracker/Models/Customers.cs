@@ -24,7 +24,11 @@ namespace ETaxTracker.Models
 
         public string? CustomerAddress { get; set; }
 
+
         public string? City { get; set; }
+        public string? LgaCode { get; set; }
+
+        public string? StateCode { get; set; }
 
         public string? Country { get; set; }
 

@@ -37,7 +37,7 @@ namespace ETaxTracker.Services
             Companies company = (Companies)source;
             _log4net.Info("Invoice Handler started for Company: " + company.CompanyName);
 
-            string newBeginTime = DateTime.Parse("2020-12-01T00:00:00Z")
+            string newBeginTime = DateTime.Parse("2026-01-01T00:00:00Z")
                 .ToString("yyyy-MM-ddTHH:mm:ssZ");
 
             string QPLastInvoiceDate = @".\Private$\" + $"{company.CompanyId}LastInvoiceSyncTime";
@@ -102,7 +102,7 @@ namespace ETaxTracker.Services
             }
             catch
             {
-                newBeginTime = DateTime.Parse("2023-03-25T00:55:00Z")
+                newBeginTime = DateTime.Parse("2026-01-01T00:55:00Z")
                     .ToString("yyyy-MM-ddTHH:mm:ssZ");
             }
 
@@ -396,7 +396,7 @@ namespace ETaxTracker.Services
             try
             {
                 using (SqlConnection cnn = new SqlConnection(
-                    "Server=localhost;user id=sa;password=Test_test1;Database=CybMBSDb;TrustServerCertificate=True"))
+                    "Server=72.55.189.251;Initial Catalog=MBSDB;User ID=eduteam;Password=edu$123team;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;MultipleActiveResultSets=true"))
                 using (SqlCommand cmd = new SqlCommand(sql, cnn))
                 {
                     cmd.Parameters.Add("@CompanyId", SqlDbType.Int).Value = itemLine.CompanyId;
@@ -515,7 +515,7 @@ namespace ETaxTracker.Services
         private int LogMessageToDB(InvoiceTransactions invoice)
         {
             // 1 = Success, 2 = Already Exists, 0 = Failed
-
+             
             const string sql = @"
         INSERT INTO dbo.InvoiceTransactions
         (
@@ -558,7 +558,7 @@ namespace ETaxTracker.Services
             try
             {
                 using (SqlConnection cnn = new SqlConnection(
-                    "Server=localhost;user id=sa;password=Test_test1;Database=CybMBSDb;TrustServerCertificate=True"))
+                    "Server=72.55.189.251;Initial Catalog=MBSDB;User ID=eduteam;Password=edu$123team;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;MultipleActiveResultSets=true"))
                 using (SqlCommand cmd = new SqlCommand(sql, cnn))
                 {
                     cmd.Parameters.Add("@CompanyId", SqlDbType.Int).Value = invoice.CompanyId;
