@@ -521,7 +521,5 @@ namespace MBSWeb.Services.Repositories
                 Message = message,
                 Data = null
             };
-
-
     }
 }
