@@ -26,12 +26,8 @@ using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-<<<<<<< HEAD
+
  
-=======
-
-
->>>>>>> c85fdfb779df8a5cf37322b7b36f0fbdf20242e8
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -467,21 +463,20 @@ namespace MBSWeb.Services.Repositories
                 double innerHeight = pageHeight - 2 * innerMargin;
 
                 gfx.DrawRectangle(innerPen, innerX, innerY, innerWidth, innerHeight);
-<<<<<<< HEAD
+ 
                 
                 // === 8. Save and return PDF ===
                 string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyyMMddHHmmssfff}.pdf";
                 string filePath = Path.Combine(Environment.CurrentDirectory, "TranscriptDr", fileName);
-                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!); 
-=======
+ 
 
 
-                // === 8. Save and return PDF ===
-                string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyyMMddHHmmssfff}.pdf";
-                string filePath = Path.Combine(Environment.CurrentDirectory, "TranscriptDr", fileName);
-                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+                //// === 8. Save and return PDF ===
+                //string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyyMMddHHmmssfff}.pdf";
+                // string filePath = Path.Combine(Environment.CurrentDirectory, "TranscriptDr", fileName);
+                //Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
->>>>>>> c85fdfb779df8a5cf37322b7b36f0fbdf20242e8
+ 
 
                 pdf.Info.Author = "James Hope University";
                 pdf.Info.Subject = "JHU School of Business";
