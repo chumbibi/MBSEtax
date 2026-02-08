@@ -11,33 +11,33 @@ namespace MBSWeb.Managers
             _invoice = invoice;
         }
 
-        public async Task<MBSResponse> GetAllInvoicesByCompany(int companyid)
+        public async Task<MBSResponse> GetAllInvoicesByCompany(int companyId, int pageNumber = 1, int pageSize = 10)
         {
-            var result = await _invoice.GetAllInvoicesByCompany(companyid);
+            var result = await _invoice.GetAllInvoicesByCompany(companyId,pageNumber,pageSize);
             return result;
         }
 
-        public async Task<MBSResponse> GetInvoiceByInvoiceNumber(int companyid, string InvoiceNumber)
+        public async Task<MBSResponse> GetInvoiceItemsByInvoiceNumber(int companyId, string invoiceNumber, int pageNumber = 1,int pageSize = 10)
         {
-           var result = await _invoice.GetInvoiceByInvoiceNumber(companyid, InvoiceNumber);
+           var result = await _invoice.GetInvoiceByInvoiceNumber(companyId, invoiceNumber,pageNumber,pageSize);
             return result;  
         }
 
-        public async Task<MBSResponse> GetInvoiceItemsByInvoiceNumber(int companyid, string InvoiceNumber)
+        public async Task<MBSResponse> GetInvoiceByInvoiceNumber(int companyId, string invoiceNumber, int pageNumber = 1, int pageSize = 10)
         {
-          var result = await _invoice.GetInvoiceItemsByInvoiceNumber(companyid, InvoiceNumber);
+          var result = await _invoice.GetInvoiceByInvoiceNumber(companyId, invoiceNumber, pageNumber,pageSize);
             return result;  
         }
 
-        public async Task<MBSResponse> GetInvoicesByCustomerCode(int companyid, string customerCode)
+        public async Task<MBSResponse> GetInvoicesByCustomerCode(int companyId, string customerCode, int pageNumber = 1, int pageSize = 10)
         {
-           var result = await _invoice.GetInvoicesByCustomerCode(companyid, customerCode);
+           var result = await _invoice.GetInvoicesByCustomerCode(companyId, customerCode,pageNumber,pageSize);
             return result;  
         }
 
-        public async Task<MBSResponse> GetInvoicesByDateRange(DateRangeDto model)
+        public async Task<MBSResponse> GetInvoicesByDateRange(DateRangeDto model, int pageNumber = 1, int pageSize = 10)
         {
-            var result = await _invoice.GetInvoicesByDateRange(model);
+            var result = await _invoice.GetInvoicesByDateRange(model,pageNumber,pageSize);
             return result;  
         }
 

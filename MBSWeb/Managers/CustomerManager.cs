@@ -46,7 +46,6 @@ namespace MBSWeb.Managers
             var result = await _customer.SearchForCustomerByNameAsync(customerName);
             return result;
         }
-
         public async Task<MBSResponse> SearchForCustomerByPhoneAsync(string phone)
         {
             var result = await _customer.SearchForCustomerByPhoneAsync(phone);

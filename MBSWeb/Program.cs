@@ -50,7 +50,7 @@ namespace MBSWeb
 
             //Register Managers
             builder.Services.AddScoped<UserAuthenticationManager>();
-             builder.Services.AddScoped<InvoiceTransactionManager>();
+            builder.Services.AddScoped<InvoiceTransactionManager>();
             builder.Services.AddScoped<CustomerManager>();
             builder.Services.AddScoped<CompanyManager>();
             builder.Services.AddScoped<BusinessLocationsManager>();
@@ -65,11 +65,13 @@ namespace MBSWeb
             app.UseCors(x =>
             {
                 x.AllowAnyOrigin();//    
-                x.WithOrigins(              
-                    
-                    "https://localhost:5173",
+                x.WithOrigins(
+
+                     "http://72.55.189.248:3057", 
+                     "https://localhost:5173",
                      "http://localhost:5173",
-                    "https://jhutes2.cyberspace.net.ng");  //These ae what we need to use:
+                     "https://72.55.189.248:3057",
+                    "https://jhutes2.cyberspace.net.ng");  //These are what we need to use:
                 x.AllowAnyMethod();
                 x.AllowAnyHeader();
             });

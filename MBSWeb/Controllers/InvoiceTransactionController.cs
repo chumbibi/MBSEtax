@@ -16,30 +16,30 @@ namespace MBSWeb.Controllers
         }
 
         [HttpGet("getallinvoicesbycompany")]
-        public async Task<IActionResult> GetAllInvoicesByCompany(int companyid)
+        public async Task<IActionResult> GetAllInvoicesByCompany(int companyId, int pageNumber = 1, int pageSize = 10)
         {
-            var result = await _manager.GetAllInvoicesByCompany(companyid);
+            var result = await _manager.GetAllInvoicesByCompany(companyId,pageNumber,pageSize);
             return StatusCode(result.StatusCode, result);   
         }
 
         [HttpGet("getinvoicebyinvoicenumber")]
-        public async Task<IActionResult> GetInvoiceByInvoiceNumber(int companyid, string InvoiceNumber)
+        public async Task<IActionResult> GetInvoiceByInvoiceNumber(int companyId, string invoiceNumber, int pageNumber = 1, int pageSize = 10)
         {
-            var result = await _manager.GetInvoiceByInvoiceNumber(companyid, InvoiceNumber);
+            var result = await _manager.GetInvoiceByInvoiceNumber(companyId, invoiceNumber,pageNumber,pageSize);
             return StatusCode(result.StatusCode, result);   
         }
 
         [HttpGet("getinvoiceitemsbyinvoicenumber")]
-        public async Task<MBSResponse> GetInvoiceItemsByInvoiceNumber(int companyid, string InvoiceNumber)
+        public async Task<IActionResult> GetInvoiceItemsByInvoiceNumber(int companyId, string invoiceNumber, int pageNumber = 1,int pageSize = 10)
         {
-            var result = await _manager.GetInvoiceItemsByInvoiceNumber(companyid, InvoiceNumber);
-            return result;  
+            var result = await _manager.GetInvoiceByInvoiceNumber(companyId, invoiceNumber, pageNumber, pageSize);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("getinvoicesbycustomercode")]
-        public async Task<MBSResponse> GetInvoicesByCustomerCode(int companyid, string customerCode)
+        public async Task<MBSResponse> GetInvoicesByCustomerCode(int companyId, string customerCode, int pageNumber = 1, int pageSize = 10)
         {
-            var result = await _manager.GetInvoicesByCustomerCode(companyid, customerCode);
+            var result = await _manager.GetInvoicesByCustomerCode(companyId, customerCode,pageNumber,pageSize);
             return result;  
         }
 
