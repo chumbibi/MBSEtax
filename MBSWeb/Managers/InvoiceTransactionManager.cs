@@ -46,5 +46,12 @@ namespace MBSWeb.Managers
             var result = await _invoice.UpdateInvoiceByIRNAsync(irn, model);
             return result;
         }
+
+        public async Task<MBSResponse> DownloadInvoiceByNumber(int companyid, string invoiceNumber)
+        {
+            var result = await _invoice.DownloadInvoiceByNumber(companyid, invoiceNumber);
+            return result;
+        }
+       
     }
 }

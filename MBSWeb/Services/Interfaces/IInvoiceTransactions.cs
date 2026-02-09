@@ -13,6 +13,7 @@ namespace MBSWeb.Services.Interfaces
         Task<MBSResponse> UpdateInvoiceByIRNAsync(string irn, PaymentStatusDto model);
 
         Task<MBSResponse> DownloadInvoiceByNumber(int companyid, string invoiceNumber);
+        
 
     }
 }

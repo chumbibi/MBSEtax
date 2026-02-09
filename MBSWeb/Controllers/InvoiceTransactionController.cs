@@ -55,5 +55,8 @@ namespace MBSWeb.Controllers
             var result = await _manager.UpdateInvoiceByIRNAsync(irn, model);
             return result;  
         }
+
+      
+
     }
 }

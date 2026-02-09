@@ -39,6 +39,7 @@ using static System.Net.Mime.MediaTypeNames;
 using Color = MigraDocCore.DocumentObjectModel.Color;
 using Document = MigraDocCore.DocumentObjectModel.Document;
 using Image = SixLabors.ImageSharp.Image;
+using System.Text;
 namespace MBSWeb.Services.Repositories
 {
     public class InvoiceTransactionsRepository : IInvoiceTransactions
@@ -324,6 +325,7 @@ namespace MBSWeb.Services.Repositories
                 return Fail($"Failed to update invoice: {ex.Message}");
             }
         }
+
 
         public async Task<MBSResponse> DownloadInvoiceByNumber(int companyid, string invoiceNumber)
         {
