@@ -1,5 +1,6 @@
 ﻿using MBSWeb.Data;
 using MBSWeb.Models.Dto;
+using MBSWeb.Models.Entities;
 using MBSWeb.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,6 +55,48 @@ namespace MBSWeb.Services.Repositories
                 return Fail($"Search failed: {ex.Message}");
             }
         }
+        public async Task<MBSResponse> GetStateAndLgaByCityAsync(
+    string? city,
+    int pageNumber = 1,
+    int pageSize = 20)
+        {
+            if (string.IsNullOrWhiteSpace(city))
+                return Success("No search term provided", new List<BusinessLocationsDto>());
+
+            string search = city.Trim();
+
+            try
+            {
+                var query = _context.BusinessLocations
+                    .Where(c =>
+                        EF.Functions.Like(c.City!, $"%{search}%") ||
+                        EF.Functions.Like(c.LgaCode!, $"%{search}%") ||
+                        EF.Functions.Like(c.StateCode!, $"%{search}%"))
+                    .AsNoTracking();
+
+                int totalRecords = await query.CountAsync();
+
+                var results = await query
+                    .OrderBy(c => c.City)   // Always order before pagination
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return Success("Locations retrieved successfully", new
+                {
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalRecords = totalRecords,
+                    TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+                    Data = results
+                });
+            }
+            catch (Exception ex)
+            {
+                return Fail($"Search failed: {ex.Message}");
+            }
+        }
+
         private static MBSResponse Success(string message, object? data = null) =>
             new()
             {

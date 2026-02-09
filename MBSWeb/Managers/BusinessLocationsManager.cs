@@ -17,5 +17,14 @@ namespace MBSWeb.Managers
             return response;
 
         }
+
+        public async Task<MBSResponse> GetStateAndLgaByCityAsync(
+            string? city,
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            var response = await _manager.GetStateAndLgaByCityAsync(city, pageNumber, pageSize);
+            return response;
+        }
     }
 }
