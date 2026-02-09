@@ -4,16 +4,22 @@ using ETaxTracker.Models;
 using ETaxTracker.Models.Dtos;
 using log4net;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Storage;
 using MSMQ.Messaging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel.Design;
+
 //using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Configuration;
+using System.Diagnostics.Metrics;
+using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -29,14 +35,16 @@ namespace ETaxTracker.Services
         public bool isApplicationProcessing;
 
         //MethodBase.GetCurrentMethod().DeclaringType
-        private static readonly ILog _log4net = LogManager.GetLogger(typeof(CustomerProcessor));
-
+         
+        private static readonly ILog _log4net = LogManager.GetLogger(typeof(TaxProcessor));
         public TaxProcessor(bool _isApplicationProcessing)
         {
             isApplicationProcessing = _isApplicationProcessing;
         }
 
-        private void CustomerHandler(object? source)
+
+
+        private void TaxProcessorHandler(object? source)
         {
             Companies company = (Companies)source;
 
@@ -51,59 +59,102 @@ namespace ETaxTracker.Services
                 try
                 {
 
-                    //Authentication on APP FIRS Portal // 07056970-8540
-                    var credentials = new AuthCredentials
-                    {
-                        Email = "thenew@info.com",
-                        Password = "password123"
-                    };
+                    ////Authentication on APP FIRS Portal // 07056970-8540
+                    //var credentials = new AuthCredentials
+                    //{
+                    //    Email = "thenew@info.com",
+                    //    Password = "password123"
+                    //};
 
+                    //var loginUrl = "https://einvoice.gention.tech/api/v1/auth/login";
+
+                    //using var client = new HttpClient();
+
+                    //var jsonPayload = JsonSerializer.Serialize(credentials);
+                    //using var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                    //using var request = new HttpRequestMessage(HttpMethod.Post, loginUrl)
+                    //{
+                    //    Content = content
+                    //};
+
+                    //using var response = client.SendAsync(request).Result;
+                    //response.EnsureSuccessStatusCode();
+
+                    //var json = response.Content.ReadAsStringAsync().Result; _log4net.Info(json.ToString());
+                    //if (json.ToString().ToLower().Contains("error"))
+                    //{
+                    //    var err = JsonSerializer.Deserialize<APPErrorResponse>(
+                    //                json,
+                    //                new JsonSerializerOptions
+                    //                {
+                    //                    PropertyNameCaseInsensitive = true
+                    //                });
+
+                    //    _log4net.Error($"{company.CompanyName}: Authentication failed.{err}");
+
+
+                    //    Thread.Sleep(300000);
+                    //    continue;
+                    //}
+                    //else
+                    //{
+                    //    //Login was successful, deserialize the response and extract the token
+                    //    var page = JsonSerializer.Deserialize<APPLoginResponse>(
+                    //                json,
+                    //                new JsonSerializerOptions
+                    //                {
+                    //                    PropertyNameCaseInsensitive = true
+                    //                });
+
+
+                     
+                    // --- Authenticate ---
+                    var credentials = new AuthCredentials { Email = "thenew@info.com", Password = "password123" };
                     var loginUrl = "https://einvoice.gention.tech/api/v1/auth/login";
-
                     using var client = new HttpClient();
-
                     var jsonPayload = JsonSerializer.Serialize(credentials);
                     using var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-
-                    using var request = new HttpRequestMessage(HttpMethod.Post, loginUrl)
-                    {
-                        Content = content
-                    };
-
+                    using var request = new HttpRequestMessage(HttpMethod.Post, loginUrl) { Content = content };
                     using var response = client.SendAsync(request).Result;
-                    response.EnsureSuccessStatusCode();
+                    var json = response.Content.ReadAsStringAsync().Result;
+                    _log4net.Info($"Auth response received for {company.CompanyName}");
 
-                    var json = response.Content.ReadAsStringAsync().Result; _log4net.Info(json.ToString());
-                    if (json.ToString().ToLower().Contains("error"))
+                    if (!response.IsSuccessStatusCode)
                     {
-                        var err = JsonSerializer.Deserialize<APPErrorResponse>(
-                                    json,
-                                    new JsonSerializerOptions
-                                    {
-                                        PropertyNameCaseInsensitive = true
-                                    });
-
-                        _log4net.Error($"{company.CompanyName}: Authentication failed.{err}");
-
-
-                        Thread.Sleep(300000);
+                        var errorResponse = JsonSerializer.Deserialize<APPErrorResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        _log4net.Error($"{company.CompanyName}: Authentication failed. {errorResponse?.Message}");
+                        Task.Delay(TimeSpan.FromMinutes(5)).Wait();
                         continue;
                     }
-                    else
+
+                    //var page = JsonSerializer.Deserialize<APPLoginResponse>(
+                    //                json,
+                    //                new JsonSerializerOptions
+                    //                {
+                    //                    PropertyNameCaseInsensitive = true
+                    //                });
+
+                    var loginResponse = JsonSerializer.Deserialize<ApiResponse<LoginResponseData>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (loginResponse?.Status != "success")
                     {
-                        //Login was successful, deserialize the response and extract the token
-                        var page = JsonSerializer.Deserialize<APPLoginResponse>(
-                                    json,
-                                    new JsonSerializerOptions
-                                    {
-                                        PropertyNameCaseInsensitive = true
-                                    });
+                        _log4net.Error($"{company.CompanyName}: Authentication unsuccessful. Message: {loginResponse?.Message}");
+                        Task.Delay(TimeSpan.FromMinutes(5)).Wait();
+                        continue;
+                    }
+
+                    var accessToken = loginResponse.Data.AccessToken;
+                    var user = loginResponse.Data.Data;
+                    _log4net.Info($"{company.CompanyName}: Authentication successful for {user.Email}");
 
 
 
-                        _log4net.Info($"{company.CompanyName}: Authentication successful. Token: {page.Data.AccessToken}");
 
-                        string accessToken = page.Data.AccessToken;
+                    {
+                        //
+                        _log4net.Info($"{company.CompanyName}: Authentication successful. Token: {accessToken}");
+
+                        //string accessToken = page.Data.AccessToken;
                         // Use the token for subsequent requests
 
                         // The supplier entity
@@ -111,7 +162,7 @@ namespace ETaxTracker.Services
                         company.TIN = "07056970-8540";
                         company.Street = "33 Saka Tinubu Street";
                         company.PostalZone = "101233";
-                        company.CompanyFIRSServiceNumber = page.Data.User.ServiceId;
+                        company.CompanyFIRSServiceNumber = user.ServiceId;
                         company.CompanyAddress = "33 Saka Tinubu Street, Victoria Island, Lagos";
                         company.ActiveStatus = 1;
 
@@ -133,7 +184,7 @@ namespace ETaxTracker.Services
                                 {
                                     InvoiceTransactions invoice = new InvoiceTransactions();
                                     invoice.Id = int.Parse(reader.GetValue(0).ToString());
-                                    invoice.CompanyId = reader.GetString(1);
+                                    invoice.CompanyId = reader.GetValue(1).ToString();
                                     invoice.InvoiceNumber = reader.GetString(2);
                                     invoice.InvoiceDate = reader.GetDateTime(3);
                                     invoice.CustomerCode = reader.GetString(4);
@@ -181,7 +232,7 @@ namespace ETaxTracker.Services
                             // ====================================================
                             // 1. Who is the customer?
                             // ====================================================
-                            cmd = new SqlCommand("SELECT top 1 [CompanyId],[CustomerCode],[CustomerName],[BusinessDescription],[Email],[CustomerAddress],[City],[Country],[PostalZone],[Street],[Telephone],[TIN],[ActiveStatus],[CountryCode] FROM [Customers] WHERE [CustomerCode]=@CustomerCode", con);
+                            cmd = new SqlCommand("SELECT top 1 [CompanyId],[CustomerCode],[CustomerName],[BusinessDescription],[Email],[CustomerAddress],[City],[LgaCode],[StateCode],[Country],[PostalZone],[Street],[Telephone],[TIN],[ActiveStatus],[CountryCode] FROM [Customers] WHERE [CustomerCode]=@CustomerCode", con);
                             cmd.Parameters.AddWithValue("@CustomerCode", invoice.CustomerCode);
                             SqlDataReader reader = cmd.ExecuteReader();
 
@@ -199,12 +250,13 @@ namespace ETaxTracker.Services
                                     customer.BusinessDescription = reader.IsDBNull(3) ? null : reader.GetString(3);
                                     customer.Email = reader.IsDBNull(4) ? null : reader.GetString(4);
                                     customer.CustomerAddress = reader.IsDBNull(5) ? null : reader.GetString(5);
-                                    customer.City = reader.IsDBNull(6) ? null : reader.GetString(6);
-                                    customer.Country = reader.IsDBNull(7) ? null : reader.GetString(7);                     
-                             
-                                    customer.PostalZone = reader.IsDBNull(8) ? null : reader.GetString(8);
-                                    customer.Street = reader.IsDBNull(9) ? null : reader.GetString(9);
-                                    customer.Telephone = reader.IsDBNull(10) ? null : reader.GetString(10);
+                                    customer.City = reader.IsDBNull(6) ? "Eti-Osa" : reader.GetString(6);
+                                    customer.LgaCode = reader.IsDBNull(7) ? "NG-LA-EOS" : reader.GetString(7);
+                                    customer.StateCode = reader.IsDBNull(8) ? "NG-LA" : reader.GetString(8);
+                                    customer.Country = reader.IsDBNull(9) ? null : reader.GetString(9);
+                                    customer.PostalZone = reader.IsDBNull(10) ? null : reader.GetString(10);
+                                    customer.Street = reader.IsDBNull(11) ? null : reader.GetString(11);
+                                    customer.Telephone = reader.IsDBNull(12) ? null : reader.GetString(12);
 
                                     switch (customer.Country.ToUpper())
                                     {
@@ -228,6 +280,10 @@ namespace ETaxTracker.Services
                             }
                             reader.Close();
                             cmd.Dispose();
+
+                            // ====================================================
+                            // 2. What items did the customer bought?
+                            // ====================================================
 
                             // Select the items the customer purchased from ItemLines table
                             List<ItemLines> itemLines = new List<ItemLines>();
@@ -304,42 +360,42 @@ namespace ETaxTracker.Services
 
 
                             // ====================================================
-                            // 2. FIRS INVOICE REQUEST
+                            // 3. FIRS INVOICE REQUEST
                             // ====================================================
 
                             FirsInvoiceRequest firsInv = new FirsInvoiceRequest();
 
                             //--------------------------------
-                            // Supplier Party (Accounting Supplier)
+                            // 4. Supplier Party (Accounting Supplier) - Who sold the items?
                             // ----------------------------------------------------
                             AccountingSupplierParty supplierParty = new AccountingSupplierParty();
                             supplierParty.PartyName = company.CompanyName;
                             supplierParty.BusinessDescription = company.BusinessDescription;
-                            
-                            
+
+
                             supplierParty.Email = company.Email;
                             supplierParty.Telephone = company.Telephone;
-                           
-                            supplierParty.Tin = company.TIN;
 
+                            supplierParty.Tin = company.TIN;
+                            // Business Adress of Supplier Party
                             PostalAddress supplierAddress = new PostalAddress();
                             supplierAddress.StreetName = company.Street;
                             supplierAddress.CityName = company.City;
+                            supplierAddress.LGA = company.LgaCode;
+                            supplierAddress.State = company.StateCode;
                             supplierAddress.Country = company.Country;
                             supplierAddress.CountryCode = company.Country;
 
                             switch (supplierAddress.Country.ToUpper())
-                            {       
+                            {
                                 case "NG":
-                                  supplierParty.Telephone = NormalizeToE164(supplierParty.Telephone,"234");
-                                break;
+                                    supplierParty.Telephone = NormalizeToE164(supplierParty.Telephone, "234");
+                                    break;
 
                                 default:
-                                   supplierParty.Telephone = NormalizeToE164(supplierParty.Telephone);
-                                break;
+                                    supplierParty.Telephone = NormalizeToE164(supplierParty.Telephone);
+                                    break;
                             }
-                            
-
                             supplierAddress.PostalZone = company.PostalZone;
 
                             supplierParty.PostalAddress = supplierAddress;
@@ -359,11 +415,13 @@ namespace ETaxTracker.Services
                             PostalAddress customerAddress = new PostalAddress();
                             customerAddress.StreetName = customer.Street;
                             customerAddress.CityName = customer.City;
+                            customerAddress.LGA = customer.LgaCode;
+                            customerAddress.State = customer.StateCode;
                             customerAddress.Country = customer.Country;
                             customerAddress.CountryCode = customer.Country;
                             customerAddress.PostalZone = customer.PostalZone;
-
                             customerParty.PostalAddress = customerAddress;
+
                             firsInv.AccountingCustomerParty = customerParty;
 
 
@@ -611,10 +669,6 @@ namespace ETaxTracker.Services
 
 
 
-
-
-
-
                             // End of loop through itemLines
 
 
@@ -630,7 +684,7 @@ namespace ETaxTracker.Services
                             firsInv.DocumentCurrencyCode = invoice.CurrencyCode;
                             firsInv.TaxCurrencyCode = invoice.CurrencyCode;
                             firsInv.Note = "Test invoice submission to FIRS";
-                            firsInv.BusinessId = page.Data.User.BusinessId; // company.CompanyFIRSServiceNumber;
+                            firsInv.BusinessId = user.BusinessId.ToString(); // company.CompanyFIRSServiceNumber;
 
                             // ----------------------------------------------------
                             // Monetary Totals
@@ -675,9 +729,11 @@ namespace ETaxTracker.Services
                             firsInv.AllowanceCharge = new List<AllowanceCharge> { cg };
                             firsInv.DueDate = DateTime.Now.AddDays(30).ToString("yyyy-MM-dd");
                             firsInv.AccountingCost = $"{(0.68 * totals.PayableAmount).ToString()} NGN";
-
+                            // firsInv.BusinessId = user.BusinessId.ToString();
                             // firsinvoice collection is ready
 
+                            // Invoice Number 
+                            firsInv.InvoiceNumber = invNo;
 
 
                             invoiceResults.Add(invoice.Id, firsInv);
@@ -795,24 +851,6 @@ namespace ETaxTracker.Services
             }
         }
 
-        private void CustomerQueueHandler(object? source)
-        {
-
-            Companies company = (Companies)source;
-
-            string QPCustomer = @".\Private$\" + $"{company.CompanyId}Customers";
-
-            MessageQueue _queue = new MessageQueue(QPCustomer);
-
-            // Explicitly set formatter for Customer class
-            _queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Customers) });
-
-            _queue.BeginPeek();
-
-            _queue.PeekCompleted += Queue_PeekCompleted;
-
-
-        }
 
         private void Queue_PeekCompleted(object sender, PeekCompletedEventArgs e)
         {
@@ -826,7 +864,7 @@ namespace ETaxTracker.Services
 
 
                 Customers cust = (Customers)Msg.Body;
-
+                 
                 // Log it to DB
 
 
@@ -880,6 +918,8 @@ namespace ETaxTracker.Services
                         Email,
                         CustomerAddress,
                         City,
+                        LgaCode,
+                        StateCode,
                         Country,
                         Telephone,
                         TIN,
@@ -893,6 +933,8 @@ namespace ETaxTracker.Services
                         @Email,
                         @CustomerAddress,
                         @City,
+                        @LgaCode,
+                        @StateCode,
                         @Country,
                         @Telephone,
                         @TIN,
@@ -904,9 +946,9 @@ namespace ETaxTracker.Services
                         WHERE CompanyId = @CompanyId
                           AND CustomerCode = @CustomerCode
                     );";
+            string connectionstring = ConfigurationManager.ConnectionStrings["connectionstring"].ConnectionString;
 
-            using (SqlConnection cnn = new SqlConnection(
-                "Server=localhost;user id=sa;password=Test_test1;Database=CybMBSDb;TrustServerCertificate=True"))
+            using (SqlConnection cnn = new SqlConnection(connectionstring))
             using (SqlCommand cmd = new SqlCommand(sql, cnn))
             {
                 try
@@ -918,6 +960,8 @@ namespace ETaxTracker.Services
                     cmd.Parameters.AddWithValue("@Email", cust.Email);
                     cmd.Parameters.AddWithValue("@CustomerAddress", cust.CustomerAddress);
                     cmd.Parameters.AddWithValue("@City", cust.City);
+                    cmd.Parameters.AddWithValue("@LgaCode", cust.LgaCode);
+                    cmd.Parameters.AddWithValue("@StateCode", cust.StateCode);
                     cmd.Parameters.AddWithValue("@Country", cust.Country);
                     cmd.Parameters.AddWithValue("@Telephone", cust.Telephone);
                     cmd.Parameters.AddWithValue("@TIN", cust.TIN);
@@ -942,8 +986,8 @@ namespace ETaxTracker.Services
         public void StartProcess(Companies company)
         {
 
-            // Customer Thread
-            Thread customerThread = new Thread(new ParameterizedThreadStart(CustomerHandler));
+            //Tax Processor Handler Thread
+            Thread customerThread = new Thread(new ParameterizedThreadStart(TaxProcessorHandler));
 
             customerThread.Start(company);
             Interlocked.Increment(ref threadCount);
@@ -956,12 +1000,9 @@ namespace ETaxTracker.Services
         }
         public void StopProcess(Companies company)
         {
-
             _log4net.Info("Stopping processing for Company: " + company.CompanyName);
             isApplicationProcessing = false;
             Interlocked.Decrement(ref threadCount);
-
-
         }
 
         public string NormalizeToNgE164(string phone)

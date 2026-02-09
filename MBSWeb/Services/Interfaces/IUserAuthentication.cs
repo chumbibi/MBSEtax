@@ -15,5 +15,6 @@ namespace MBSWeb.Services.Interfaces
         Task<MBSResponse> GetAllUsersAsync();
         Task<MBSResponse> GetUsersByEmailAsync(string email);
 
+        // UpdateUserRole
     }
 }

@@ -18,6 +18,7 @@ namespace MBSWeb.Data
         public DbSet<Customers> Customers { get; set; }
         public DbSet<InvoiceTransactions> InvoiceTransactions { get; set; }
         public DbSet<ItemLines> ItemLines { get; set; }
+        public DbSet<BusinessLocations> BusinessLocations { get; set; }
 
         //public DbSet<MBSUsers> MBSUsers { get; set; } // Example for another model
         //public DbSet<MBSAccessRoles> MBSAccessRoles { get; set; } // Example for another model

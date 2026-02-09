@@ -59,7 +59,7 @@ namespace ETaxTracker
 
                 _log4net.Info($"DB Connection was Successful");
 
-                SqlCommand cmd = new SqlCommand("SELECT [Id],[CompanyId],[ERPUserId],[ERPPassword],[CompanyFIRSReferenceNumber],[CompanyFIRSServiceNumber],[CompanyCode],[CompanyName],[CompanyAddress],[BusinessDescription],[Email],[City],[Country],[CountryCode],[PostalZone],[Street],[Telephone],[TIN],[AuthURL],[ActiveStatus] FROM Company WHERE [ActiveStatus]=1", cn);
+                SqlCommand cmd = new SqlCommand("SELECT [Id],[CompanyId],[ERPUserId],[ERPPassword],[CompanyFIRSReferenceNumber],[CompanyFIRSServiceNumber],[CompanyCode],[CompanyName],[CompanyAddress],[BusinessDescription],[Email],[City],[LgaCode],[StateCode],[Country],[CountryCode],[PostalZone],[Street],[Telephone],[TIN],[AuthURL],[ActiveStatus] FROM Company WHERE [ActiveStatus]=1", cn);
                 SqlDataReader dr = cmd.ExecuteReader();
                 if (dr.HasRows == true)
                 {
@@ -79,17 +79,15 @@ namespace ETaxTracker
                         company.BusinessDescription = dr.IsDBNull(9) ? string.Empty : dr.GetString(9);
                         company.Email = dr.IsDBNull(10) ? string.Empty : dr.GetString(10);
                         company.City = dr.IsDBNull(11) ? string.Empty : dr.GetString(11);
-                        company.Country = dr.IsDBNull(12) ? string.Empty : dr.GetString(12);
-                        company.CountryCode = dr.IsDBNull(13) ? string.Empty : dr.GetString(13);
-                        company.PostalZone = dr.IsDBNull(14) ? string.Empty : dr.GetString(14);
-                        company.Street = dr.IsDBNull(15) ? string.Empty : dr.GetString(15);
-                        company.Telephone = dr.IsDBNull(16) ? string.Empty : dr.GetString(16);
-                        company.TIN = dr.IsDBNull(17) ? string.Empty : dr.GetString(17);
-                        company.AuthUrl = dr.IsDBNull(18) ? string.Empty : dr.GetString(18);
-                        company.ActiveStatus = dr.IsDBNull(19) ? 0 : dr.GetInt32(19);
+                        company.LgaCode= dr.IsDBNull(12) ? string.Empty : dr.GetString(12);
+                        company.StateCode = dr.IsDBNull(13) ? string.Empty : dr.GetString(13);
+                        company.Street = dr.IsDBNull(14) ? string.Empty : dr.GetString(14);
+                        company.Telephone = dr.IsDBNull(15) ? string.Empty : dr.GetString(15);
+                        company.TIN = dr.IsDBNull(16) ? string.Empty : dr.GetString(16);
+                        company.AuthUrl = dr.IsDBNull(17) ? string.Empty : dr.GetString(17);
+                        company.ActiveStatus = dr.IsDBNull(18) ? 0 : dr.GetInt32(18);
                         Companies.Add(company);
                     }
-
 
                 }
                 else
@@ -116,7 +114,7 @@ namespace ETaxTracker
 
             foreach (Companies company in Companies)
             {
-               
+
                 //customerThread = new Thread(new ParameterizedThreadStart(CustomerProcessHandler)); // Create threads based on number of companies
                 //customerThread.Start(company);
 
@@ -127,8 +125,8 @@ namespace ETaxTracker
                 //Tax Thread
 
 
-                //taxThread = new Thread(new ParameterizedThreadStart(TaxProcessHandler)); // Create threads based on number of companies
-                //taxThread.Start(company);
+                taxThread = new Thread(new ParameterizedThreadStart(TaxProcessHandler)); // Create threads based on number of companies
+                taxThread.Start(company);
 
             }
 

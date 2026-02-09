@@ -38,10 +38,14 @@ namespace MBSWeb.Services.Repositories
                     Email = model.Email,
                     CompanyId = model.CompanyId,
                     LastName = model.LastName,
-                    PhoneNumber = model.PhoneNumber
-                };
+                    PhoneNumber = model.PhoneNumber,
+                    Role = model.Role,                    
+                    
+                };          
+              
+                 
 
-                var result = await _userManager.CreateAsync(user, model.Password!);
+                  var result = await _userManager.CreateAsync(user, model.Password!);
 
                 if (!result.Succeeded)
                     return Fail(result.Errors.Select(e => e.Description));
@@ -53,7 +57,7 @@ namespace MBSWeb.Services.Repositories
 
                     await _userManager.AddToRoleAsync(user, model.Role);
                 }
-
+                
                 return Success("User registered successfully");
             }
             catch (Exception ex)
@@ -89,12 +93,14 @@ namespace MBSWeb.Services.Repositories
             try
             {
                 var user = await _userManager.FindByEmailAsync(model.UserName);
+                
 
                 if (user == null)
                     return Fail("Invalid username or password");
 
                 var result = await _signInManager
                     .CheckPasswordSignInAsync(user, model.Password, false);
+                
 
                 if (!result.Succeeded)
                     return Fail("Invalid username or password");
@@ -246,11 +252,12 @@ namespace MBSWeb.Services.Repositories
             try
             {
                 var user = await _userManager.FindByEmailAsync(email);
-
+                 
                 if (user == null)
                     return Fail("User not found");
 
                 var roles = await _userManager.GetRolesAsync(user);
+                  
                 return Success("User roles retrieved successfully", roles);
             }
             catch (Exception ex)

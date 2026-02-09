@@ -44,6 +44,7 @@ namespace MBSWeb
             builder.Services.AddScoped<IInvoiceTransactions, InvoiceTransactionsRepository>();
             builder.Services.AddScoped<ICustomers, CustomersRepository>();
             builder.Services.AddScoped<ICompanies, CompaniesRepository>();
+            builder.Services.AddScoped<IBusinessLocations, BusinessLocationsRepository>();
 
 
 
@@ -52,6 +53,7 @@ namespace MBSWeb
             builder.Services.AddScoped<InvoiceTransactionManager>();
             builder.Services.AddScoped<CustomerManager>();
             builder.Services.AddScoped<CompanyManager>();
+            builder.Services.AddScoped<BusinessLocationsManager>();
 
 
             var app = builder.Build();

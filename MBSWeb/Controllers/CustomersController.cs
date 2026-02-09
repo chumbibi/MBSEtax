@@ -70,7 +70,7 @@ namespace MBSWeb.Controllers
         }
 
         [HttpPut("updatecustomer")]
-        public async Task<IActionResult> UpdateCustomerAsync(string customerCode, CustomerDto model)
+        public async Task<IActionResult> UpdateCustomerAsync(string customerCode, [FromBody]CustomerDto model)
         {
             var result = await _manager.UpdateCustomerAsync(customerCode, model);
             return StatusCode(result.StatusCode, result);   
