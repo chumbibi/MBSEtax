@@ -64,9 +64,9 @@ namespace MBSWeb.Managers
             return result;
         }
 
-        public async Task<MBSResponse> SearchCustomersAsync(string? searchTerm)
+        public async Task<MBSResponse> SearchCustomersAsync(string? searchTerm, int pageNumber = 1, int pageSize = 20)
         {
-            var result = await _customer.SearchCustomersAsync(searchTerm);
+            var result = await _customer.SearchCustomersAsync(searchTerm,pageNumber,pageSize);
             return result;
         }
     }

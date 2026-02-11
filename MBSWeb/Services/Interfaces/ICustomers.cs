@@ -13,8 +13,8 @@ namespace MBSWeb.Services.Interfaces
         Task<MBSResponse> SearchForCustomerByEmailAsync(string email);
         Task<MBSResponse> SearchForCustomerByIRNAsync(string irn);
         Task<MBSResponse> SearchForCustomerByTINAsync(string tin);
-
-        Task<MBSResponse> SearchCustomersAsync(string searchTerm);
+        Task<MBSResponse> SearchCustomersAsync(string? searchTerm, int pageNumber = 1, int pageSize = 20);
+        //Task<MBSResponse> SearchCustomersAsync(string searchTerm);
         Task<MBSResponse> GetAllCustomersAsync();
     }
 }

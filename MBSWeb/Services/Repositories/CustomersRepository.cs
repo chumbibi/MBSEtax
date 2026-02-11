@@ -70,6 +70,7 @@ namespace MBSWeb.Services.Repositories
                 customer.Street = model.Street;
                 customer.Telephone = model.Telephone;
                 customer.TIN = model.TIN;
+                 
                 customer.ActiveStatus = model.ActiveStatus;
 
                 await _context.SaveChangesAsync();
@@ -188,49 +189,115 @@ namespace MBSWeb.Services.Repositories
                 return Fail($"Search failed: {ex.Message}");
             }
         }
-        public async Task<MBSResponse> SearchCustomersAsync(string? searchTerm)
+        //public async Task<MBSResponse> SearchCustomersAsync(string? searchTerm)
+        //{
+        //    try
+        //    {
+        //        // If search term is null/empty/whitespace, return all customers
+        //        if (string.IsNullOrWhiteSpace(searchTerm))
+        //        {
+        //            var allCustomers = await _context.Customers
+        //                .OrderBy(c => c.CustomerCode)
+        //                .ToListAsync();
+
+        //            return Success("Customers retrieved successfully", allCustomers);
+        //        }
+
+        //        searchTerm = searchTerm.Trim();
+
+        //        // Base customer search using CONTAINS logic
+        //        var customerQuery = _context.Customers
+        //            .Where(c =>
+        //                (!string.IsNullOrEmpty(c.CustomerCode) && c.CustomerCode.Contains(searchTerm)) ||
+        //                (!string.IsNullOrEmpty(c.CustomerName) && c.CustomerName.Contains(searchTerm)) ||
+        //                (!string.IsNullOrEmpty(c.Email) && c.Email.Contains(searchTerm)) ||
+        //                (!string.IsNullOrEmpty(c.Telephone) && c.Telephone.Contains(searchTerm)) ||
+        //                (!string.IsNullOrEmpty(c.TIN) && c.TIN.Contains(searchTerm))
+        //            );
+
+        //        // IRN-based customer lookup
+        //        var irnCustomersQuery = _context.InvoiceTransactions
+        //            .Where(i => i.IRN.Contains(searchTerm))
+        //            .Select(i => i.CustomerCode)
+        //            .Distinct()
+        //            .Join(_context.Customers,
+        //                  code => code,
+        //                  customer => customer.CustomerCode,
+        //                  (code, customer) => customer);
+
+        //        // Merge and deduplicate results
+        //        var customers = await customerQuery
+        //            .Union(irnCustomersQuery)
+        //            .OrderBy(c => c.CustomerCode)
+        //            .ToListAsync();
+
+        //        return Success("Customers retrieved successfully", customers);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Fail($"Search failed: {ex.Message}");
+        //    }
+        //}
+
+
+        public async Task<MBSResponse> SearchCustomersAsync(string? searchTerm, int pageNumber = 1, int pageSize = 20)
         {
             try
             {
-                // If search term is null/empty/whitespace, return all customers
-                if (string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    var allCustomers = await _context.Customers
-                        .OrderBy(c => c.CustomerCode)
-                        .ToListAsync();
+                if (pageNumber <= 0) pageNumber = 1;
+                if (pageSize <= 0) pageSize = 20;
 
-                    return Success("Customers retrieved successfully", allCustomers);
+                // Base customer query
+                IQueryable<Customers> customerQuery = _context.Customers;
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    searchTerm = searchTerm.Trim();
+
+                    // Customers matching search term
+                    var baseQuery = _context.Customers
+                        .Where(c =>
+                            (!string.IsNullOrEmpty(c.CustomerCode) && c.CustomerCode.Contains(searchTerm)) ||
+                            (!string.IsNullOrEmpty(c.CustomerName) && c.CustomerName.Contains(searchTerm)) ||
+                            (!string.IsNullOrEmpty(c.Email) && c.Email.Contains(searchTerm)) ||
+                            (!string.IsNullOrEmpty(c.Telephone) && c.Telephone.Contains(searchTerm)) ||
+                            (!string.IsNullOrEmpty(c.TIN) && c.TIN.Contains(searchTerm))
+                        );
+
+                    // IRN-based customer lookup
+                    var irnQuery = _context.InvoiceTransactions
+                        .Where(i => i.IRN.Contains(searchTerm))
+                        .Select(i => i.CustomerCode)
+                        .Distinct()
+                        .Join(_context.Customers,
+                              code => code,
+                              customer => customer.CustomerCode,
+                              (code, customer) => customer);
+
+                    // Merge and deduplicate
+                    customerQuery = baseQuery.Union(irnQuery);
                 }
 
-                searchTerm = searchTerm.Trim();
+                // Get total count before pagination
+                var totalCount = await customerQuery.CountAsync();
 
-                // Base customer search using CONTAINS logic
-                var customerQuery = _context.Customers
-                    .Where(c =>
-                        (!string.IsNullOrEmpty(c.CustomerCode) && c.CustomerCode.Contains(searchTerm)) ||
-                        (!string.IsNullOrEmpty(c.CustomerName) && c.CustomerName.Contains(searchTerm)) ||
-                        (!string.IsNullOrEmpty(c.Email) && c.Email.Contains(searchTerm)) ||
-                        (!string.IsNullOrEmpty(c.Telephone) && c.Telephone.Contains(searchTerm)) ||
-                        (!string.IsNullOrEmpty(c.TIN) && c.TIN.Contains(searchTerm))
-                    );
-
-                // IRN-based customer lookup
-                var irnCustomersQuery = _context.InvoiceTransactions
-                    .Where(i => i.IRN.Contains(searchTerm))
-                    .Select(i => i.CustomerCode)
-                    .Distinct()
-                    .Join(_context.Customers,
-                          code => code,
-                          customer => customer.CustomerCode,
-                          (code, customer) => customer);
-
-                // Merge and deduplicate results
-                var customers = await customerQuery
-                    .Union(irnCustomersQuery)
+                // Apply ordering and pagination
+                var pagedCustomers = await customerQuery
                     .OrderBy(c => c.CustomerCode)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
 
-                return Success("Customers retrieved successfully", customers);
+                // Wrap in paged result
+                var result = new
+                {
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    Customers = pagedCustomers
+                };
+
+                return Success("Customers retrieved successfully", result);
             }
             catch (Exception ex)
             {
@@ -238,7 +305,8 @@ namespace MBSWeb.Services.Repositories
             }
         }
 
-      
+
+
 
         private static MBSResponse Success(string message, object? data = null) =>
             new()

@@ -40,6 +40,7 @@ using Color = MigraDocCore.DocumentObjectModel.Color;
 using Document = MigraDocCore.DocumentObjectModel.Document;
 using Image = SixLabors.ImageSharp.Image;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
 namespace MBSWeb.Services.Repositories
 {
     public class InvoiceTransactionsRepository : IInvoiceTransactions
@@ -50,26 +51,47 @@ namespace MBSWeb.Services.Repositories
         {
             _context = context;
         }
-   
-        public async Task<MBSResponse> GetAllInvoicesByCompany(int companyId, int pageNumber = 1, int pageSize = 10)
+
+        [HttpGet("getallinvoicesbycompany")]
+        public async Task<MBSResponse> GetAllInvoicesByCompany( int? companyId = null, string? companyCode = null, string? searchTerm = null,  int pageNumber = 1,int pageSize = 10)
         {
             try
             {
-                // Safety checks
-                if (pageNumber <= 0)
-                    pageNumber = 1;
+                if (pageNumber <= 0) pageNumber = 1;
+                if (pageSize <= 0) pageSize = 10;
 
-                if (pageSize <= 0)
-                    pageSize = 10;
+                // Base query
+                IQueryable<InvoiceTransactions> query = _context.InvoiceTransactions;
 
-                // Base query (do NOT execute yet)
-                var query = _context.InvoiceTransactions
-                    .Where(i => i.CompanyId == companyId);
+                // Filter by companyId or companyCode if provided
+                if (companyId.HasValue)
+                {
+                    query = query.Where(i => i.CompanyId == companyId.Value);
+                }
+                else if (!string.IsNullOrWhiteSpace(companyCode))
+                {
+                    companyCode = companyCode.Trim();
+                    query = query.Where(i => i.CompanyId != null && i.CompanyId == companyId);
+                }
 
-                // Total count (before pagination)
+                // Apply search term if provided
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    searchTerm = searchTerm.Trim();
+
+                    query = query.Where(i =>
+                        EF.Functions.Like(i.InvoiceNumber ?? "", $"%{searchTerm}%") ||
+                        EF.Functions.Like(i.CustomerName ?? "", $"%{searchTerm}%") ||
+                        EF.Functions.Like(i.CustomerCode ?? "", $"%{searchTerm}%") ||
+                        EF.Functions.Like(i.IRN ?? "", $"%{searchTerm}%") ||
+                        EF.Functions.Like(i.FirsInvoiceNumber ?? "", $"%{searchTerm}%")
+                    );
+                }
+
+                // Total records before pagination
                 var totalRecords = await query.CountAsync();
 
-                // Paginated data
+                // Paginate
                 var invoices = await query
                     .OrderByDescending(i => i.InvoiceDate)
                     .Skip((pageNumber - 1) * pageSize)
@@ -95,7 +117,7 @@ namespace MBSWeb.Services.Repositories
         }
 
 
-       
+
 
         public async Task<MBSResponse> GetInvoiceByInvoiceNumber( int companyId, string invoiceNumber, int pageNumber = 1,int pageSize = 10)
         {
