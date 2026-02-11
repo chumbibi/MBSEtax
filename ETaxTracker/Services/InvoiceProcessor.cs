@@ -6,6 +6,7 @@ using MSMQ.Messaging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
+using System.Configuration;
 using System.Data;
 using System.Linq;
 using System.Net;
@@ -392,11 +393,11 @@ namespace ETaxTracker.Services
                               AND DocEntry = @DocEntry
                               AND LineNum = @LineNum
                         );";
+            string connectionstring = ConfigurationManager.ConnectionStrings["connectionstring"].ConnectionString;
 
             try
             {
-                using (SqlConnection cnn = new SqlConnection(
-                    "Server=72.55.189.251;Initial Catalog=MBSDB;User ID=eduteam;Password=edu$123team;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;MultipleActiveResultSets=true"))
+                using (SqlConnection cnn = new SqlConnection(connectionstring))
                 using (SqlCommand cmd = new SqlCommand(sql, cnn))
                 {
                     cmd.Parameters.Add("@CompanyId", SqlDbType.Int).Value = itemLine.CompanyId;
@@ -554,11 +555,11 @@ namespace ETaxTracker.Services
             WHERE CompanyId = @CompanyId
               AND InvoiceNumber = @InvoiceNumber
         );";
+            string connectionstring = ConfigurationManager.ConnectionStrings["connectionstring"].ConnectionString;
 
             try
             {
-                using (SqlConnection cnn = new SqlConnection(
-                    "Server=72.55.189.251;Initial Catalog=MBSDB;User ID=eduteam;Password=edu$123team;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False;MultipleActiveResultSets=true"))
+                using (SqlConnection cnn = new SqlConnection(connectionstring))
                 using (SqlCommand cmd = new SqlCommand(sql, cnn))
                 {
                     cmd.Parameters.Add("@CompanyId", SqlDbType.Int).Value = invoice.CompanyId;

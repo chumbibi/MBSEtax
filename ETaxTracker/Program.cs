@@ -13,6 +13,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
@@ -52,14 +53,21 @@ namespace ETaxTracker
             XmlConfigurator.Configure(logRepository, new FileInfo("Log4net.config"));
 
             List<Companies> Companies = new List<Companies>();
-            SqlConnection cn = new SqlConnection("Server=localhost;user id=sa; password=Test_test1;Database=CybMBSDb;TrustServerCertificate=True");
+            string connectionstring = ConfigurationManager.ConnectionStrings["connectionstring"].ConnectionString;
+
+            SqlConnection cn = new SqlConnection(connectionstring);
             cn.Open();
             if (cn.State == System.Data.ConnectionState.Open)
             {
 
                 _log4net.Info($"DB Connection was Successful");
 
-                SqlCommand cmd = new SqlCommand("SELECT [Id],[CompanyId],[ERPUserId],[ERPPassword],[CompanyFIRSReferenceNumber],[CompanyFIRSServiceNumber],[CompanyCode],[CompanyName],[CompanyAddress],[BusinessDescription],[Email],[City],[LgaCode],[StateCode],[Country],[CountryCode],[PostalZone],[Street],[Telephone],[TIN],[AuthURL],[ActiveStatus] FROM Company WHERE [ActiveStatus]=1", cn);
+                SqlCommand cmd = new SqlCommand(@"SELECT [Id],[CompanyId],[ERPUserId],[ERPPassword],
+                                               [CompanyFIRSReferenceNumber],[CompanyFIRSServiceNumber],
+                                               [CompanyCode],[CompanyName],[CompanyAddress],[BusinessDescription],
+                                               [Email],[City],[LgaCode],[StateCode],[Country],[CountryCode],[PostalZone],
+                                               [Street],[Telephone],[TIN],[AuthURL],[ActiveStatus] 
+                                               FROM Companies WHERE [ActiveStatus]=1", cn);
                 SqlDataReader dr = cmd.ExecuteReader();
                 if (dr.HasRows == true)
                 {
@@ -81,11 +89,14 @@ namespace ETaxTracker
                         company.City = dr.IsDBNull(11) ? string.Empty : dr.GetString(11);
                         company.LgaCode= dr.IsDBNull(12) ? string.Empty : dr.GetString(12);
                         company.StateCode = dr.IsDBNull(13) ? string.Empty : dr.GetString(13);
-                        company.Street = dr.IsDBNull(14) ? string.Empty : dr.GetString(14);
-                        company.Telephone = dr.IsDBNull(15) ? string.Empty : dr.GetString(15);
-                        company.TIN = dr.IsDBNull(16) ? string.Empty : dr.GetString(16);
-                        company.AuthUrl = dr.IsDBNull(17) ? string.Empty : dr.GetString(17);
-                        company.ActiveStatus = dr.IsDBNull(18) ? 0 : dr.GetInt32(18);
+                        company.Country = dr.IsDBNull(14) ? string.Empty : dr.GetString(14);
+                        company.CountryCode = dr.IsDBNull(15) ? string.Empty : dr.GetString(15);
+                        company.PostalZone = dr.IsDBNull(16) ? string.Empty : dr.GetString(16);
+                        company.Street = dr.IsDBNull(17) ? string.Empty : dr.GetString(17);
+                        company.Telephone = dr.IsDBNull(18) ? string.Empty : dr.GetString(18);
+                        company.TIN = dr.IsDBNull(19) ? string.Empty : dr.GetString(19);
+                        company.AuthUrl = dr.IsDBNull(20) ? string.Empty : dr.GetString(20);
+                        company.ActiveStatus = dr.IsDBNull(21) ? 0 : int.Parse(dr.GetValue(21).ToString());
                         Companies.Add(company);
                     }
 

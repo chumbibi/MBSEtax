@@ -55,29 +55,28 @@ namespace MBSWeb.Services.Repositories
                 return Fail($"Search failed: {ex.Message}");
             }
         }
-        public async Task<MBSResponse> GetStateAndLgaByCityAsync(
-    string? city,
-    int pageNumber = 1,
-    int pageSize = 20)
+        public async Task<MBSResponse> GetStateAndLgaByCityAsync( string? city, int pageNumber = 1, int pageSize = 20)
         {
-            if (string.IsNullOrWhiteSpace(city))
-                return Success("No search term provided", new List<BusinessLocationsDto>());
-
-            string search = city.Trim();
-
             try
             {
-                var query = _context.BusinessLocations
-                    .Where(c =>
+                IQueryable<BusinessLocations> query =
+                    _context.BusinessLocations.OrderBy(c=>c.City).AsNoTracking();
+
+                // Apply filter ONLY if search term exists
+                if (!string.IsNullOrWhiteSpace(city))
+                {
+                    string search = city.Trim();
+
+                    query = query.Where(c =>
                         EF.Functions.Like(c.City!, $"%{search}%") ||
                         EF.Functions.Like(c.LgaCode!, $"%{search}%") ||
-                        EF.Functions.Like(c.StateCode!, $"%{search}%"))
-                    .AsNoTracking();
+                        EF.Functions.Like(c.StateCode!, $"%{search}%"));
+                }
 
                 int totalRecords = await query.CountAsync();
 
                 var results = await query
-                    .OrderBy(c => c.City)   // Always order before pagination
+                    .OrderBy(c => c.City)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
@@ -95,6 +94,45 @@ namespace MBSWeb.Services.Repositories
             {
                 return Fail($"Search failed: {ex.Message}");
             }
+
+
+            //if (string.IsNullOrWhiteSpace(city))
+            //    return Success("No search term provided", new List<BusinessLocationsDto>());
+
+
+
+            //string search = city.Trim();
+
+            //try
+            //{
+            //    var query = _context.BusinessLocations
+            //        .Where(c =>
+            //            EF.Functions.Like(c.City!, $"%{search}%") ||
+            //            EF.Functions.Like(c.LgaCode!, $"%{search}%") ||
+            //            EF.Functions.Like(c.StateCode!, $"%{search}%"))
+            //        .AsNoTracking();
+
+            //    int totalRecords = await query.CountAsync();
+
+            //    var results = await query
+            //        .OrderBy(c => c.City)   // Always order before pagination
+            //        .Skip((pageNumber - 1) * pageSize)
+            //        .Take(pageSize)
+            //        .ToListAsync();
+
+            //    return Success("Locations retrieved successfully", new
+            //    {
+            //        PageNumber = pageNumber,
+            //        PageSize = pageSize,
+            //        TotalRecords = totalRecords,
+            //        TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+            //        Data = results
+            //    });
+            //}
+            //catch (Exception ex)
+            //{
+            //    return Fail($"Search failed: {ex.Message}");
+            //}
         }
 
         private static MBSResponse Success(string message, object? data = null) =>

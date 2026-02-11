@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using MSMQ.Messaging;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -313,9 +314,9 @@ namespace ETaxTracker.Services
                         WHERE CompanyId = @CompanyId
                           AND CustomerCode = @CustomerCode
                     );";
+            string connectionstring = ConfigurationManager.ConnectionStrings["connectionstring"].ConnectionString;
 
-            using (SqlConnection cnn = new SqlConnection(
-                "Server=localhost;user id=sa;password=Test_test1;Database=CybMBSDb;TrustServerCertificate=True"))
+            using (SqlConnection cnn = new SqlConnection(connectionstring))
             using (SqlCommand cmd = new SqlCommand(sql, cnn))
             {
                 try
