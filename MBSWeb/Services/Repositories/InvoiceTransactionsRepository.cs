@@ -27,7 +27,7 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
- 
+
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -52,8 +52,7 @@ namespace MBSWeb.Services.Repositories
             _context = context;
         }
 
-        [HttpGet("getallinvoicesbycompany")]
-        public async Task<MBSResponse> GetAllInvoicesByCompany( int? companyId = null, string? companyCode = null, string? searchTerm = null,  int pageNumber = 1,int pageSize = 10)
+        public async Task<MBSResponse> GetAllInvoicesByCompany(int companyId, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
@@ -119,7 +118,7 @@ namespace MBSWeb.Services.Repositories
 
 
 
-        public async Task<MBSResponse> GetInvoiceByInvoiceNumber( int companyId, string invoiceNumber, int pageNumber = 1,int pageSize = 10)
+        public async Task<MBSResponse> GetInvoiceByInvoiceNumber(int companyId, string invoiceNumber, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
@@ -163,7 +162,7 @@ namespace MBSWeb.Services.Repositories
         }
 
 
-        public async Task<MBSResponse> GetInvoiceItemsByInvoiceNumber(int companyId, string invoiceNumber, int pageNumber = 1,int pageSize = 10)
+        public async Task<MBSResponse> GetInvoiceItemsByInvoiceNumber(int companyId, string invoiceNumber, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
@@ -208,9 +207,9 @@ namespace MBSWeb.Services.Repositories
         }
 
 
-        
 
-        public async Task<MBSResponse> GetInvoicesByCustomerCode( int companyId, string customerCode, int pageNumber = 1,int pageSize = 10)
+
+        public async Task<MBSResponse> GetInvoicesByCustomerCode(int companyId, string customerCode, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
@@ -256,7 +255,7 @@ namespace MBSWeb.Services.Repositories
 
 
 
-        public async Task<MBSResponse> GetInvoicesByDateRange(DateRangeDto model, int pageNumber = 1,int pageSize = 10)
+        public async Task<MBSResponse> GetInvoicesByDateRange(DateRangeDto model, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
@@ -353,175 +352,345 @@ namespace MBSWeb.Services.Repositories
         {
             try
             {
-
-                // 1. Create the PDF document
-                var document = new Document();
-                var section = document.AddSection();
-                section.PageSetup.PageFormat = PageFormat.A4;
-                section.PageSetup.TopMargin = Unit.FromCentimeter(0.2);    // 1 cm
-                section.PageSetup.BottomMargin = Unit.FromCentimeter(0.1); // 1 cm
-                section.PageSetup.LeftMargin = Unit.FromCentimeter(0.2);   // 1.5 cm
-                section.PageSetup.RightMargin = Unit.FromCentimeter(0.2);  // 1.5 cm
-
-
-                // 2. Invoice Header
-                var paragraph = section.AddParagraph("Original");
-                paragraph.Format.Font.Size = 8;
-                paragraph.Format.Font.Name = "Candara";
-                paragraph.Format.Font.Color = Colors.Black;
-                paragraph.Format.Font.Bold = true;
-                paragraph.Format.SpaceBefore = "0.1cm";
-                paragraph.Format.SpaceAfter = "0.1cm";
-                paragraph.Format.Alignment = ParagraphAlignment.Center;
-
-
-
-
-                // 3. Render document to PDF
-                var renderer = new PdfDocumentRenderer(unicode: true);
-                renderer.Document = document;
-                renderer.RenderDocument();
-                var pdf = renderer.PdfDocument;
-
-                // 4. Set up graphics for drawing
-                var page = pdf.Pages[0];
-                var gfx = XGraphics.FromPdfPage(page);
-
-                // Insert Logo
-
-                var imagePath = Path.Combine(Environment.CurrentDirectory, $"{companyid.ToString()}.png");
-                // var signaturePath = Path.Combine(Environment.CurrentDirectory, "registrar.png");
-
-                using (var img = Image.Load(imagePath))
-                using (var ms = new MemoryStream())
+                var invoice = await _context.InvoiceTransactions
+                    .FirstOrDefaultAsync(i =>
+                        i.CompanyId == companyid && (i.FirsInvoiceNumber == invoiceNumber ||
+                        i.InvoiceNumber == invoiceNumber));
+                if (invoice != null)
                 {
-                    // Save the image as PNG into a memory stream
-                    img.Save(ms, new PngEncoder());
-                    ms.Position = 0;
 
-                    // PdfSharpCore expects a Func<Stream>, so wrap the stream
-                    var xImage = XImage.FromStream(() => new MemoryStream(ms.ToArray()));
-
-                    //220;
-
-                    double ImageWidth = 70;
-                    double ImageHeight = 40;
-                    double y = 60;
-                    double x = (page.Width.Point + 1.5 * ImageWidth + section.PageSetup.RightMargin + section.PageSetup.LeftMargin - img.Width) / 2; // + width;
+                    var customer = await _context.Customers
+                        .FirstOrDefaultAsync(c => c.CustomerCode == invoice.CustomerCode);
 
 
-                    // Draw the image on the page.
-                    gfx.DrawImage(xImage, x, y, ImageWidth, ImageHeight);
 
-                    ms.Dispose();
+                    var items = await _context.ItemLines
+                        .Where(i =>
+                            i.CompanyId == companyid &&
+                            i.DocEntry == invoiceNumber)
+                        .OrderBy(i => i.LineNum)
+                        .ToListAsync();
 
+                    // 1. Create the PDF document
+                    var document = new Document();
+                    var section = document.AddSection();
+                    section.PageSetup.PageFormat = PageFormat.A4;
+                    section.PageSetup.TopMargin = Unit.FromCentimeter(0.5);    // 1 cm
+                    section.PageSetup.BottomMargin = Unit.FromCentimeter(0.1); // 1 cm
+                    section.PageSetup.LeftMargin = Unit.FromCentimeter(0.2);   // 1.5 cm
+                    section.PageSetup.RightMargin = Unit.FromCentimeter(0.8);  // 1.5 cm
+
+                    // 2. Invoice Header
+                    var paragraph = section.AddParagraph("INVOICE");
+                    paragraph.Format.Font.Size = 14;
+                    paragraph.Format.Font.Name = "Candara";
+                    paragraph.Format.Font.Color = Colors.Black;
+                    paragraph.Format.Font.Bold = true;
+                    paragraph.Format.SpaceBefore = "0.0cm";
+                    paragraph.Format.SpaceAfter = "0.1cm";
+                    paragraph.Format.Alignment = ParagraphAlignment.Right;
+
+
+                    // 2. Invoice Header
+                    paragraph = section.AddParagraph("Original");
+                    paragraph.Format.Font.Size = 8;
+                    paragraph.Format.Font.Name = "Candara";
+                    paragraph.Format.Font.Color = Colors.Black;
+                    paragraph.Format.Font.Bold = true;
+                    paragraph.Format.SpaceBefore = "0.1cm";
+                    paragraph.Format.SpaceAfter = "2.0cm";
+                    paragraph.Format.Alignment = ParagraphAlignment.Center;
+
+
+                    // Draw a table with five rows and four columns
+                    // ======================
+                    // BORDERLESS TABLE (5 x 4) — MANUAL
+                    // ======================
+                    var table = section.AddTable();
+                    table.Borders.Width = 0; // no visible borders
+
+                    // ---- Columns ----
+                    table.AddColumn(Unit.FromCentimeter(11)); // 55% of usable width
+                    table.AddColumn(Unit.FromCentimeter(3));  // remaining 3 columns equally
+                    table.AddColumn(Unit.FromCentimeter(3));
+                    table.AddColumn(Unit.FromCentimeter(3));
+
+                    table.LeftPadding = 4;
+                    table.RightPadding = 4;
+
+                    // ---- Row 1 (Header) ----
+                    var row1 = table.AddRow();
+                    row1.Height = Unit.FromCentimeter(0.9);
+                    //row1.Format.Font.Bold = true;
+
+                    row1.Cells[0].AddParagraph(invoice.CustomerName);
+                    row1.Cells[0].Format.Font.Size = 10;
+                    row1.Cells[0].Format.Font.Bold = true;
+                    row1.Cells[0].Format.Font.Color = Colors.Black;
+
+                    row1.Cells[1].AddParagraph("Qty");
+                    row1.Cells[2].AddParagraph("Unit Price");
+                    row1.Cells[3].AddParagraph("Amount");
+
+                    // ---- Row 2 ----
+                    var row2 = table.AddRow();
+                    row2.Height = Unit.FromCentimeter(0.9);
+                    row2.Cells[0].AddParagraph($"ATTN: FIN/ACC");
+                    row2.Cells[0].Format.Font.Size = 8;
+                    row2.Cells[0].Format.Font.Bold = false;
+                    row2.Cells[0].Format.Font.Color = Colors.Black;
+
+
+                    row2.Cells[1].AddParagraph(invoice.InvoiceNumber).Format.Alignment = ParagraphAlignment.Right;
+
+                    string dt = DateTime.Parse(invoice.InvoiceDate.ToString()).ToString("yyyy-MM-dd");
+                    row2.Cells[2].AddParagraph($"{dt}");
+                    row2.Cells[3].AddParagraph(customer.TIN);
+                    //"₦100,000"
+                    // ---- Row 3 ----
+                    var row3 = table.AddRow();
+                    row3.Height = Unit.FromCentimeter(0.9);
+                    row3.Cells[0].AddParagraph(invoice.CustomerAddress);
+                    row3.Cells[0].Format.Font.Size = 6;
+                    row3.Cells[0].Format.Font.Bold = false;
+                    row3.Cells[0].Format.Font.Color = Colors.DarkGray;
+
+                    row3.Cells[1].AddParagraph("1");
+                    row3.Cells[2].AddParagraph("₦150,000");
+                    row3.Cells[3].AddParagraph("₦150,000");
+
+                    // ---- Row 4 ----
+                    var row4 = table.AddRow();
+                    row4.Height = Unit.FromCentimeter(0.9);
+                    row4.Cells[0].AddParagraph($"{customer.LgaCode },{customer.StateCode}"); // empty
+                    row4.Cells[0].Format.Font.Size = 6;
+                    row4.Cells[0].Format.Font.Bold = false;
+                    row4.Cells[0].Format.Font.Color = Colors.DarkGray;
+
+                    row4.Cells[1].AddParagraph("");
+                    row4.Cells[2].AddParagraph("Subtotal:");
+                    row4.Cells[3].AddParagraph("₦350,000");
+                    row4.Cells[2].Format.Alignment = ParagraphAlignment.Right;
+                    row4.Cells[3].Format.Alignment = ParagraphAlignment.Right;
+
+                    // ---- Row 5 ----
+                    var row5 = table.AddRow();
+                    row5.Height = Unit.FromCentimeter(0.9);
+                    row5.Cells[0].AddParagraph(customer.Country.ToUpper()); // empty
+                    row5.Cells[0].Format.Font.Size = 6;
+                    row5.Cells[0].Format.Font.Bold = false;
+                    row5.Cells[0].Format.Font.Color = Colors.DarkGray;
+                     
+
+                    row5.Cells[1].AddParagraph("");
+                    row5.Cells[2].AddParagraph("Total:");
+                    row5.Cells[3].AddParagraph("₦350,000");
+                    row5.Format.Font.Bold = true;
+                    row5.Cells[2].Format.Alignment = ParagraphAlignment.Right;
+                    row5.Cells[3].Format.Alignment = ParagraphAlignment.Right;
+
+
+
+                    // 3. Render document to PDF
+                    var renderer = new PdfDocumentRenderer(unicode: true);
+                    renderer.Document = document;
+                    renderer.RenderDocument();
+                    var pdf = renderer.PdfDocument;
+
+                    // 4. Set up graphics for drawing
+                    var page = pdf.Pages[0];
+                    var gfx = XGraphics.FromPdfPage(page);
+
+                    // Insert Logo
+
+                    var imagePath = Path.Combine(Environment.CurrentDirectory, $"Assets\\c{companyid.ToString()}.png");
+
+                    var directory = Path.GetDirectoryName(imagePath);
+
+                    // Ensure directory exists
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
+
+                    // var signaturePath = Path.Combine(Environment.CurrentDirectory, "registrar.png");
+
+                    using (var img = Image.Load(imagePath))
+                    using (var ms = new MemoryStream())
+                    {
+                        // Save the image as PNG into a memory stream
+                        img.Save(ms, new PngEncoder());
+                        ms.Position = 0;
+
+                        // PdfSharpCore expects a Func<Stream>, so wrap the stream
+                        var xImage = XImage.FromStream(() => new MemoryStream(ms.ToArray()));
+
+                        //220;
+
+                        double ImageWidth = 120;
+                        double ImageHeight = 50;
+                        double y = 55;
+                        double x = (page.Width.Point + 1.5 * ImageWidth + section.PageSetup.RightMargin + section.PageSetup.LeftMargin - img.Width) / 2; // + width;
+
+
+                        // Draw the image on the page.
+                        gfx.DrawImage(xImage, x-10, y, ImageWidth, ImageHeight);
+
+                        ms.Dispose();
+
+                    }
+
+                    //insert line
+
+                    // ===== SETTINGS =====
+                    //double marginLeft = 10;
+                    //double marginRight = page.Width - 10;
+                    //double yTop = 40;
+                    //double gap = 5;
+                    //// ===== LINE SPACING =====
+
+
+                    //string title = "INVOICE";
+
+                    //// Font
+                    //var font = new XFont("Arial", 16, XFontStyle.Bold);
+
+                    //// Measure text
+                    //var textSize = gfx.MeasureString(title, font);
+
+                    //// ===== 3/4 PAGE POSITION =====
+                    //double textCenterX = page.Width * 0.75;
+
+                    //double textStart = textCenterX - textSize.Width / 2;
+                    //double textEnd = textCenterX + textSize.Width / 2;
+
+                    //// ===== BLACK PENS =====
+                    //var thickPen = new XPen(XColors.Black, 4);
+                    //var thinPen = new XPen(XColors.Black, 1);
+
+                    //// ===== DRAW UPPER (THICK) LINE =====
+                    //gfx.DrawLine(thickPen, marginLeft, yTop, textStart - 10, yTop);
+                    //gfx.DrawLine(thickPen, textEnd + 10, yTop, marginRight, yTop);
+
+                    //// ===== DRAW LOWER (THIN) LINE =====
+                    //double yBottom = yTop + gap + (thickPen.Width / 2); ;
+                    //gfx.DrawLine(thinPen, marginLeft, yBottom, textStart - 10, yBottom);
+                    //gfx.DrawLine(thinPen, textEnd + 10, yBottom, marginRight, yBottom);
+
+                    //// ===== DRAW TEXT =====
+                    //gfx.DrawString(title, font, XBrushes.Black,
+                    //               new XPoint(textCenterX, yTop + 4),
+                    //               XStringFormats.TopCenter);
+
+                    // Insert Logo
+
+                    //var linePath = Path.Combine(Environment.CurrentDirectory, $"Assets\\{"cyberspaceLine"}.png");
+
+
+                    //using (var imgline = Image.Load(linePath))
+                    //using (var linems = new MemoryStream())
+                    //{
+                    //    // Save the image as PNG into a memory stream
+                    //    imgline.Save(linems, new PngEncoder());
+                    //    linems.Position = 0;
+
+                    //    // PdfSharpCore expects a Func<Stream>, so wrap the stream
+                    //    var lineImage = XImage.FromStream(() => new MemoryStream(linems.ToArray()));
+
+                    //    //220;
+
+                    //    double lineWidth = 90;
+                    //    double lineHeight = 10;
+                    //    double y = 40;
+                    //    double x = (page.Width.Point + lineWidth + section.PageSetup.RightMargin + section.PageSetup.LeftMargin - imgline.Width) / 2; // + width;
+
+
+                    //    // Draw the image on the page.
+                    //    gfx.DrawImage(lineImage, x, y, lineWidth, lineHeight);
+
+                    //    linems.Dispose();
+
+                    //}
+
+                    // 
+
+                    //double pageWidth = XUnit.FromMillimeter(210);  // A4 width
+                    //double pageHeight = XUnit.FromMillimeter(297); // A4 height
+
+                    //// Insert watermark image
+
+                    //if (File.Exists(linePath))
+                    //{
+                    //    XImage watermark = XImage.FromFile(linePath);
+
+                    //    //double centerX = (pageWidth - 240) / 2;
+                    //     centerX = (pageWidth - 240) / 2;
+                    //    double centerY = (pageHeight) / 4.5;
+
+                    //    gfx.DrawImage(watermark, centerX, centerY, 240, 10);
+                    //}
+
+                    //// === Styles and dimensions ===
+                    //double outerBorderThickness = 2;
+                    //double innerBorderThickness = 4;
+                    //double innerMargin = 10;
+                    //double cornerCircleRadius = XUnit.FromMillimeter(10);  // ~6mm circle radius
+                    //double cornerSquareSize = XUnit.FromMillimeter(12);    // 6mm square
+
+                    //var outerPen = new XPen(XColor.FromArgb(255, 128, 0, 0), outerBorderThickness); // Maroon
+                    //var innerPen = new XPen(XColor.FromArgb(255, 104, 44, 44), innerBorderThickness); // Dark red
+                    //var circlePen = new XPen(XColors.Maroon, 2); // Thin black outline for circles
+                    //var circleFill = XBrushes.White;              // White background
+                    //var squareFill = XBrushes.White;
+
+                    //// === 6. Draw inner rectangle ===
+
+                    //double innerX = innerMargin;
+                    //double innerY = innerMargin;
+                    //double innerWidth = pageWidth - 2 * innerMargin;
+                    //double innerHeight = pageHeight - 2 * innerMargin;
+
+                    //gfx.DrawRectangle(innerPen, innerX, innerY, innerWidth, innerHeight);
+
+
+                    // === 8. Save and return PDF ===
+                    string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyy}.pdf";
+                    string filePath = Path.Combine(Environment.CurrentDirectory, "INVDr", fileName);
+
+
+
+                    //// === 8. Save and return PDF ===
+                    //string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyyMMddHHmmssfff}.pdf";
+                    // string filePath = Path.Combine(Environment.CurrentDirectory, "TranscriptDr", fileName);
+                    //Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+
+
+
+                    pdf.Info.Author = companyid.ToString();
+                    pdf.Info.Subject = "Cyberspace Limited";
+                    pdf.Info.Keywords = "Invoice";
+                    pdf.Info.CreationDate = DateTime.Now;
+
+                    // Insert a QR Code
+
+                    pdf.Save(filePath);
+
+                    byte[] fileBytes = File.ReadAllBytes(filePath);
+                    string base64 = Convert.ToBase64String(fileBytes);
+
+                    //return new MBSResponse
+                    //{
+                    //    StatusCode = 200,
+                    //    Message = base64,
+                    //    Data = fileBytes
+                    //};
+
+                    return Success(base64, fileBytes);
                 }
-
-                //insert line
-
-                // Insert Logo
-
-                var linePath = Path.Combine(Environment.CurrentDirectory, "jhu-line2.png");
-
-
-                using (var imgline = Image.Load(linePath))
-                using (var linems = new MemoryStream())
+                else
                 {
-                    // Save the image as PNG into a memory stream
-                    imgline.Save(linems, new PngEncoder());
-                    linems.Position = 0;
-
-                    // PdfSharpCore expects a Func<Stream>, so wrap the stream
-                    var lineImage = XImage.FromStream(() => new MemoryStream(linems.ToArray()));
-
-                    //220;
-
-                    double lineWidth = 90;
-                    double lineHeight = 10;
-                    double y = 40;
-                    double x = (page.Width.Point + lineWidth + section.PageSetup.RightMargin + section.PageSetup.LeftMargin - imgline.Width) / 2; // + width;
-
-
-                    // Draw the image on the page.
-                    gfx.DrawImage(lineImage, x, y, lineWidth, lineHeight);
-
-                    linems.Dispose();
-
+                    return Fail("Invoice not found");
                 }
-
-                // 
-
-                double pageWidth = XUnit.FromMillimeter(210);  // A4 width
-                double pageHeight = XUnit.FromMillimeter(297); // A4 height
-
-                // Insert watermark image
-
-                if (File.Exists(linePath))
-                {
-                    XImage watermark = XImage.FromFile(linePath);
-
-                    double centerX = (pageWidth - 240) / 2;
-                    double centerY = (pageHeight) / 4.5;
-
-                    gfx.DrawImage(watermark, centerX, centerY, 240, 10);
-                }
-
-                // === Styles and dimensions ===
-                double outerBorderThickness = 2;
-                double innerBorderThickness = 4;
-                double innerMargin = 10;
-                double cornerCircleRadius = XUnit.FromMillimeter(10);  // ~6mm circle radius
-                double cornerSquareSize = XUnit.FromMillimeter(12);    // 6mm square
-
-                var outerPen = new XPen(XColor.FromArgb(255, 128, 0, 0), outerBorderThickness); // Maroon
-                var innerPen = new XPen(XColor.FromArgb(255, 104, 44, 44), innerBorderThickness); // Dark red
-                var circlePen = new XPen(XColors.Maroon, 2); // Thin black outline for circles
-                var circleFill = XBrushes.White;              // White background
-                var squareFill = XBrushes.White;
-
-                // === 6. Draw inner rectangle ===
-
-                double innerX = innerMargin;
-                double innerY = innerMargin;
-                double innerWidth = pageWidth - 2 * innerMargin;
-                double innerHeight = pageHeight - 2 * innerMargin;
-
-                gfx.DrawRectangle(innerPen, innerX, innerY, innerWidth, innerHeight);
- 
-                
-                // === 8. Save and return PDF ===
-                string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyyMMddHHmmssfff}.pdf";
-                string filePath = Path.Combine(Environment.CurrentDirectory, "TranscriptDr", fileName);
- 
-
-
-                //// === 8. Save and return PDF ===
-                //string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyyMMddHHmmssfff}.pdf";
-                // string filePath = Path.Combine(Environment.CurrentDirectory, "TranscriptDr", fileName);
-                //Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
- 
-
-                pdf.Info.Author = "James Hope University";
-                pdf.Info.Subject = "JHU School of Business";
-                pdf.Info.Keywords = "Certificate, Graduation, Authenticated";
-                pdf.Info.CreationDate = DateTime.Now;
-
-                // Insert a QR Code
-
-                pdf.Save(filePath);
-
-                byte[] fileBytes = File.ReadAllBytes(filePath);
-                string base64 = Convert.ToBase64String(fileBytes);
-
-                //return new MBSResponse
-                //{
-                //    StatusCode = 200,
-                //    Message = base64,
-                //    Data = fileBytes
-                //};
-
-                return Success("Invoice payment status updated successfully", invoiceNumber);
 
             }
             catch (Exception ex)

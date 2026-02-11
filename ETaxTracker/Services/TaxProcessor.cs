@@ -14,6 +14,7 @@ using System.ComponentModel.Design;
 
 //using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Configuration;
+using System.Data;
 using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
@@ -35,7 +36,7 @@ namespace ETaxTracker.Services
         public bool isApplicationProcessing;
 
         //MethodBase.GetCurrentMethod().DeclaringType
-         
+
         private static readonly ILog _log4net = LogManager.GetLogger(typeof(TaxProcessor));
         public TaxProcessor(bool _isApplicationProcessing)
         {
@@ -108,7 +109,7 @@ namespace ETaxTracker.Services
                     //                });
 
 
-                     
+
                     // --- Authenticate ---
                     var credentials = new AuthCredentials { Email = "thenew@info.com", Password = "password123" };
                     var loginUrl = "https://einvoice.gention.tech/api/v1/auth/login";
@@ -146,10 +147,6 @@ namespace ETaxTracker.Services
                     var accessToken = loginResponse.Data.AccessToken;
                     var user = loginResponse.Data.Data;
                     _log4net.Info($"{company.CompanyName}: Authentication successful for {user.Email}");
-
-
-
-
                     {
                         //
                         _log4net.Info($"{company.CompanyName}: Authentication successful. Token: {accessToken}");
@@ -159,13 +156,13 @@ namespace ETaxTracker.Services
 
                         // The supplier entity
 
-                        company.TIN = "07056970-8540";
-                        company.Street = "33 Saka Tinubu Street";
-                        company.PostalZone = "101233";
+                         company.TIN = "07056970-8540";
+                        //company.Street = "33 Saka Tinubu Street";
+                        //company.PostalZone = "101233";
                         company.CompanyFIRSServiceNumber = user.ServiceId;
                         company.CompanyAddress = "33 Saka Tinubu Street, Victoria Island, Lagos";
-                        company.ActiveStatus = 1;
-
+                        //company.ActiveStatus = 1;
+                        company.CompanyFIRSBsinessId = user.BusinessId.ToString();
 
                         string connectionstring = ConfigurationManager.ConnectionStrings["connectionstring"].ConnectionString;
 
@@ -232,13 +229,17 @@ namespace ETaxTracker.Services
                             // ====================================================
                             // 1. Who is the customer?
                             // ====================================================
-                            cmd = new SqlCommand("SELECT top 1 [CompanyId],[CustomerCode],[CustomerName],[BusinessDescription],[Email],[CustomerAddress],[City],[LgaCode],[StateCode],[Country],[PostalZone],[Street],[Telephone],[TIN],[ActiveStatus],[CountryCode] FROM [Customers] WHERE [CustomerCode]=@CustomerCode", con);
+                            cmd = new SqlCommand(@"SELECT top 1 [CompanyId],[CustomerCode],[CustomerName],
+                                                [BusinessDescription],[Email],[CustomerAddress],[City],[LgaCode],
+                                                [StateCode],[Country],[PostalZone],[Street],[Telephone],[TIN],
+                                                [ActiveStatus],[CountryCode] FROM [Customers] 
+                                                WHERE [CustomerCode]=@CustomerCode", con);
                             cmd.Parameters.AddWithValue("@CustomerCode", invoice.CustomerCode);
                             SqlDataReader reader = cmd.ExecuteReader();
 
                             Customers customer = new Customers();
 
-                            string invNo = $"INV{DateTime.Now.ToString("yyMMddhhmmss")}";
+                           // string invNo = $"INV{DateTime.Now.ToString("yyMMddhhmmss")}";
                             // ---- Customer
                             if (reader.HasRows == true)
                             {
@@ -270,11 +271,13 @@ namespace ETaxTracker.Services
                                             break;
                                     }
 
-                                    customer.CountryCode = reader.IsDBNull(13) ? null : reader.GetString(13);
+
                                     // Business rule: always use Company TIN
                                     customer.TIN = company.TIN;
                                     // ActiveStatus is non-nullable int
-                                    customer.ActiveStatus = reader.IsDBNull(12) ? 0 : reader.GetInt32(12);
+
+                                    customer.ActiveStatus = reader.IsDBNull(14) ? 0 : int.Parse(reader.GetValue(14).ToString());
+                                    customer.CountryCode = reader.IsDBNull(15) ? null : reader.GetString(15);
 
                                 }
                             }
@@ -685,7 +688,7 @@ namespace ETaxTracker.Services
                             firsInv.TaxCurrencyCode = invoice.CurrencyCode;
                             firsInv.Note = "Test invoice submission to FIRS";
                             firsInv.BusinessId = user.BusinessId.ToString(); // company.CompanyFIRSServiceNumber;
-
+                              
                             // ----------------------------------------------------
                             // Monetary Totals
                             // ----------------------------------------------------
@@ -733,7 +736,7 @@ namespace ETaxTracker.Services
                             // firsinvoice collection is ready
 
                             // Invoice Number 
-                            firsInv.InvoiceNumber = invNo;
+                            firsInv.InvoiceNumber = string.IsNullOrEmpty(invoice.FirsInvoiceNumber) ? $"INV{invoice.InvoiceNumber.PadLeft(6, '0')}" : invoice.FirsInvoiceNumber; // invNo;
 
 
                             invoiceResults.Add(invoice.Id, firsInv);
@@ -804,7 +807,7 @@ namespace ETaxTracker.Services
                                         {
                                             _log4net.Info($"DB Connection was Successful");
 
-                                            cmd = new SqlCommand("UPDATE [InvoiceTransactions] set [IRN]=@IRN, [IRNDate]=@IRNDate, [InvoiceNumber]=@InvoiceNumber,[QRCode]=@QRCode,[ValidatedInvoice]=1, [TransmitStatus]=1, [InvoiceStatus]=0 WHERE [Id]=@Id", con);
+                                            cmd = new SqlCommand("UPDATE [InvoiceTransactions] set [IRN]=@IRN, [IRNDate]=@IRNDate, [InvoiceNumber]=@InvoiceNumber,[QRCode]=@QRCode,[ValidatedInvoice]=1, [TransmitStatus]=1, [InvoicePaymentStatus]=0 WHERE [Id]=@Id", con);
 
                                             cmd.Parameters.AddWithValue("@IRN", irn);
                                             cmd.Parameters.AddWithValue("@IRNDate", timeStamp);
@@ -837,7 +840,6 @@ namespace ETaxTracker.Services
                         Thread.Sleep(new TimeSpan(0, 10, 0));
                     }
 
-
                 }
                 catch (Exception ex)
                 {
@@ -845,12 +847,10 @@ namespace ETaxTracker.Services
 
                 }
 
-
                 Thread.Sleep(new TimeSpan(0, 20, 0));
                 _log4net.Info("Customer Handler heartbeat for Company: " + company.CompanyName);
             }
         }
-
 
         private void Queue_PeekCompleted(object sender, PeekCompletedEventArgs e)
         {
@@ -864,7 +864,7 @@ namespace ETaxTracker.Services
 
 
                 Customers cust = (Customers)Msg.Body;
-                 
+
                 // Log it to DB
 
 
