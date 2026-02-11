@@ -19,7 +19,7 @@ namespace MBSWeb.Controllers
         // public async Task<IActionResult> GetAllInvoicesByCompany(int companyId, string? searchTerm = null, int pageNumber = 1, int pageSize = 10)
         public async Task<IActionResult> GetAllInvoicesByCompany(int? companyId = null, string? companyCode = null, string? searchTerm = null, int pageNumber = 1, int pageSize = 10)
         {
-            var result = await _manager.GetAllInvoicesByCompany(companyId, pageNumber, pageSize);
+            var result = await _manager.GetAllInvoicesByCompany(companyId,companyCode,searchTerm,pageNumber,pageSize);
             return StatusCode(result.StatusCode, result);
         }
 

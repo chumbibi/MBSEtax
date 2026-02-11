@@ -11,16 +11,16 @@ namespace MBSWeb.Managers
             _manager = manager;
         }
 
-        public async Task<MBSResponse> GetStateAndLgaByCityAsync(string City)
+        public async Task<MBSResponse> GetStateAndLgaByCityAsync(string? city = "")
         {
-            var response = await _manager.GetStateAndLgaByCityAsync(City);
+            var response = await _manager.GetStateAndLgaByCityAsync(city);
             return response;
 
         }
 
-        public async Task<MBSResponse> GetStateAndLgaByCityAsync( string? city, int pageNumber = 1, int pageSize = 10)
+        public async Task<MBSResponse> GetStateAndLgaByCityAsync(string? city, string? search, int pageNumber = 1, int pageSize = 10)
         {
-            var response = await _manager.GetStateAndLgaByCityAsync(city, pageNumber, pageSize);
+            var response = await _manager.GetStateAndLgaByCityAsync(city, search,   pageNumber, pageSize);
             return response;
         }
     }

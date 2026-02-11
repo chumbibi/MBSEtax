@@ -13,7 +13,7 @@ namespace MBSWeb.Managers
 
         public async Task<MBSResponse> GetAllInvoicesByCompany(int? companyId = null, string? companyCode = null, string? searchTerm = null, int pageNumber = 1, int pageSize = 10)
         {
-            var result = await _invoice.GetAllInvoicesByCompany(companyId, pageNumber, pageSize);
+            var result = await _invoice.GetAllInvoicesByCompany(companyId, companyCode, searchTerm, pageNumber, pageSize);
             return result;
         }
 

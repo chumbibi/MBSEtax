@@ -26,9 +26,14 @@ namespace MBSWeb.Controllers
         }
 
         [HttpGet("getcodewithpagination")]
-        public async Task<IActionResult> GetStateAndLgaByCityWithPaginationAsync( [FromQuery] string? city ="", [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetStateAndLgaByCityWithPaginationAsync( [FromQuery] string? city = "", [FromQuery] string? search = "",  [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await _manager.GetStateAndLgaByCityAsync(city, pageNumber, pageSize);
+            var result = await _manager.GetStateAndLgaByCityAsync(
+                city,
+                search,
+                pageNumber,
+                pageSize);
+
             return StatusCode(result.StatusCode, result);
         }
 

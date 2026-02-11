@@ -52,7 +52,8 @@ namespace MBSWeb.Services.Repositories
             _context = context;
         }
 
-        public async Task<MBSResponse> GetAllInvoicesByCompany(int companyId, int pageNumber = 1, int pageSize = 10)
+        [HttpGet("getallinvoicesbycompany")]
+        public async Task<MBSResponse> GetAllInvoicesByCompany( int? companyId = null, string? companyCode = null, string? searchTerm = null,  int pageNumber = 1,int pageSize = 10)
         {
             try
             {
