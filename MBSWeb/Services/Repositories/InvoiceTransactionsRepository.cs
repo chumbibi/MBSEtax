@@ -4,6 +4,11 @@ using MBSWeb.Models.Dto;
 using MBSWeb.Models.Entities;
 using MBSWeb.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using MigraDocCore.DocumentObjectModel;
+using MigraDocCore.DocumentObjectModel.MigraDoc.DocumentObjectModel.Shapes;
+using MigraDocCore.DocumentObjectModel.Shapes;
+using MigraDocCore.DocumentObjectModel.Tables;
+using MigraDocCore.Rendering;
 //DownloadInvoiceByNumber
 using PdfSharpCore;
 using PdfSharpCore.Drawing;
@@ -12,23 +17,15 @@ using PdfSharpCore.Fonts;
 using PdfSharpCore.Pdf;
 using PdfSharpCore.Pdf.IO;
 using PdfSharpCore.Utils;
-
-using MigraDocCore.DocumentObjectModel;
-using MigraDocCore.DocumentObjectModel.MigraDoc.DocumentObjectModel.Shapes;
-using MigraDocCore.DocumentObjectModel.Shapes;
-using MigraDocCore.DocumentObjectModel.Tables;
-using MigraDocCore.Rendering;
-using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.ColorSpaces.Companding;
-
 using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-
-
 using System;
+using System.Buffers.Text;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -314,7 +311,7 @@ namespace MBSWeb.Services.Repositories
 
                 invoice.InvoicePaymentStatus = paymentStatus;
                 invoice.PaymentStatusTransmited = 1;
-
+                 
                 await _context.SaveChangesAsync();
 
                 return Success("Invoice payment status updated successfully", invoice);
@@ -385,15 +382,19 @@ namespace MBSWeb.Services.Repositories
                     // ======================
                     var table = section.AddTable();
                     table.Borders.Width = 0; // no visible borders
+                    table.Format.Font.Name = "Candara";
+                    table.Format.Font.Size = 7;   // <-- smaller invoice body text
+                    table.TopPadding = 1.5;
+                    table.BottomPadding = 1.5;
+                    table.LeftPadding = 3;
+                    table.RightPadding = 3;
 
                     // ---- Columns ----
                     table.AddColumn(Unit.FromCentimeter(11)); // 55% of usable width
                     table.AddColumn(Unit.FromCentimeter(3));  // remaining 3 columns equally
                     table.AddColumn(Unit.FromCentimeter(3));
                     table.AddColumn(Unit.FromCentimeter(3));
-
-                    table.LeftPadding = 4;
-                    table.RightPadding = 4;
+ 
 
                     // ---- Row 1 (Header) ----
                     var row1 = table.AddRow();
@@ -505,7 +506,7 @@ namespace MBSWeb.Services.Repositories
                         //220;
 
                         double ImageWidth = 120;
-                        double ImageHeight = 50;
+                        double ImageHeight = 60;
                         double y = 55;
                         double x = (page.Width.Point + 1.5 * ImageWidth + section.PageSetup.RightMargin + section.PageSetup.LeftMargin - img.Width) / 2; // + width;
 
@@ -517,117 +518,7 @@ namespace MBSWeb.Services.Repositories
 
                     }
 
-                    //insert line
-
-                    // ===== SETTINGS =====
-                    //double marginLeft = 10;
-                    //double marginRight = page.Width - 10;
-                    //double yTop = 40;
-                    //double gap = 5;
-                    //// ===== LINE SPACING =====
-
-
-                    //string title = "INVOICE";
-
-                    //// Font
-                    //var font = new XFont("Arial", 16, XFontStyle.Bold);
-
-                    //// Measure text
-                    //var textSize = gfx.MeasureString(title, font);
-
-                    //// ===== 3/4 PAGE POSITION =====
-                    //double textCenterX = page.Width * 0.75;
-
-                    //double textStart = textCenterX - textSize.Width / 2;
-                    //double textEnd = textCenterX + textSize.Width / 2;
-
-                    //// ===== BLACK PENS =====
-                    //var thickPen = new XPen(XColors.Black, 4);
-                    //var thinPen = new XPen(XColors.Black, 1);
-
-                    //// ===== DRAW UPPER (THICK) LINE =====
-                    //gfx.DrawLine(thickPen, marginLeft, yTop, textStart - 10, yTop);
-                    //gfx.DrawLine(thickPen, textEnd + 10, yTop, marginRight, yTop);
-
-                    //// ===== DRAW LOWER (THIN) LINE =====
-                    //double yBottom = yTop + gap + (thickPen.Width / 2); ;
-                    //gfx.DrawLine(thinPen, marginLeft, yBottom, textStart - 10, yBottom);
-                    //gfx.DrawLine(thinPen, textEnd + 10, yBottom, marginRight, yBottom);
-
-                    //// ===== DRAW TEXT =====
-                    //gfx.DrawString(title, font, XBrushes.Black,
-                    //               new XPoint(textCenterX, yTop + 4),
-                    //               XStringFormats.TopCenter);
-
-                    // Insert Logo
-
-                    //var linePath = Path.Combine(Environment.CurrentDirectory, $"Assets\\{"cyberspaceLine"}.png");
-
-
-                    //using (var imgline = Image.Load(linePath))
-                    //using (var linems = new MemoryStream())
-                    //{
-                    //    // Save the image as PNG into a memory stream
-                    //    imgline.Save(linems, new PngEncoder());
-                    //    linems.Position = 0;
-
-                    //    // PdfSharpCore expects a Func<Stream>, so wrap the stream
-                    //    var lineImage = XImage.FromStream(() => new MemoryStream(linems.ToArray()));
-
-                    //    //220;
-
-                    //    double lineWidth = 90;
-                    //    double lineHeight = 10;
-                    //    double y = 40;
-                    //    double x = (page.Width.Point + lineWidth + section.PageSetup.RightMargin + section.PageSetup.LeftMargin - imgline.Width) / 2; // + width;
-
-
-                    //    // Draw the image on the page.
-                    //    gfx.DrawImage(lineImage, x, y, lineWidth, lineHeight);
-
-                    //    linems.Dispose();
-
-                    //}
-
-                    // 
-
-                    //double pageWidth = XUnit.FromMillimeter(210);  // A4 width
-                    //double pageHeight = XUnit.FromMillimeter(297); // A4 height
-
-                    //// Insert watermark image
-
-                    //if (File.Exists(linePath))
-                    //{
-                    //    XImage watermark = XImage.FromFile(linePath);
-
-                    //    //double centerX = (pageWidth - 240) / 2;
-                    //     centerX = (pageWidth - 240) / 2;
-                    //    double centerY = (pageHeight) / 4.5;
-
-                    //    gfx.DrawImage(watermark, centerX, centerY, 240, 10);
-                    //}
-
-                    //// === Styles and dimensions ===
-                    //double outerBorderThickness = 2;
-                    //double innerBorderThickness = 4;
-                    //double innerMargin = 10;
-                    //double cornerCircleRadius = XUnit.FromMillimeter(10);  // ~6mm circle radius
-                    //double cornerSquareSize = XUnit.FromMillimeter(12);    // 6mm square
-
-                    //var outerPen = new XPen(XColor.FromArgb(255, 128, 0, 0), outerBorderThickness); // Maroon
-                    //var innerPen = new XPen(XColor.FromArgb(255, 104, 44, 44), innerBorderThickness); // Dark red
-                    //var circlePen = new XPen(XColors.Maroon, 2); // Thin black outline for circles
-                    //var circleFill = XBrushes.White;              // White background
-                    //var squareFill = XBrushes.White;
-
-                    //// === 6. Draw inner rectangle ===
-
-                    //double innerX = innerMargin;
-                    //double innerY = innerMargin;
-                    //double innerWidth = pageWidth - 2 * innerMargin;
-                    //double innerHeight = pageHeight - 2 * innerMargin;
-
-                    //gfx.DrawRectangle(innerPen, innerX, innerY, innerWidth, innerHeight);
+                   
 
 
                     // === 8. Save and return PDF ===
@@ -635,13 +526,7 @@ namespace MBSWeb.Services.Repositories
                     string filePath = Path.Combine(Environment.CurrentDirectory, "INVDr", fileName);
 
 
-
-                    //// === 8. Save and return PDF ===
-                    //string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyyMMddHHmmssfff}.pdf";
-                    // string filePath = Path.Combine(Environment.CurrentDirectory, "TranscriptDr", fileName);
-                    //Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
-
+ 
 
                     pdf.Info.Author = companyid.ToString();
                     pdf.Info.Subject = "Cyberspace Limited";
@@ -649,6 +534,24 @@ namespace MBSWeb.Services.Repositories
                     pdf.Info.CreationDate = DateTime.Now;
 
                     // Insert a QR Code
+
+                    byte[] qrBytes = Convert.FromBase64String(invoice.QRCode);
+
+                    using (var msQr = new MemoryStream(qrBytes))
+                    {
+                        var qrImage = XImage.FromStream(() => new MemoryStream(msQr.ToArray()));
+
+                        double qrSize = 45; // square size
+
+                        // center horizontally
+                        double xQr = (page.Width.Point - qrSize) / 2;
+
+                        // 1 inch from bottom
+                        double yQr = page.Height.Point - qrSize - Unit.FromInch(1).Point;
+
+                        gfx.DrawImage(qrImage, xQr, yQr, qrSize, qrSize);
+                    }
+
 
                     pdf.Save(filePath);
 

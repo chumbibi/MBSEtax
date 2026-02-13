@@ -33,8 +33,9 @@ namespace ETaxTracker.Services
             Companies company = (Companies)source;
             _log4net.Info("Customer Handler started for Company: " + company.CompanyName);
 
-            string newBeginTime = DateTime.Parse("2020-12-01T00:00:00Z")
-                .ToString("yyyy-MM-ddTHH:mm:ssZ");
+            string newBeginTime = DateTime
+    .Parse("2026-01-01T00:00:00Z")
+    .ToString("yyyy-MM-ddTHH:mm:ssZ");
 
             string QPLastCustomerDate = @".\Private$\" + $"{company.CompanyId}LastCustomerSyncTime";
             string QPCustomer = @".\Private$\" + $"{company.CompanyId}Customers";
@@ -73,7 +74,7 @@ namespace ETaxTracker.Services
             }
             catch
             {
-                newBeginTime = DateTime.Parse("2020-12-01T00:00:00Z")
+                newBeginTime = DateTime.Parse("2026-12-01T00:00:00Z")
                     .ToString("yyyy-MM-ddTHH:mm:ssZ");
             }
 

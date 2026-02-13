@@ -25,8 +25,6 @@ namespace MBSWeb
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                                                                 options.UseSqlServer(builder.Configuration.GetConnectionString("connectionstring")));
 
-            
-
             // ? SINGLE Identity registration
             builder.Services.AddIdentity<MBSUsers, MBSAccessRoles>(options =>
             {
@@ -37,7 +35,6 @@ namespace MBSWeb
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
-
             //Register the Dependency Injections
 
             builder.Services.AddScoped<IUserAuthentication, UserAuthenticationRepository>();
@@ -46,15 +43,12 @@ namespace MBSWeb
             builder.Services.AddScoped<ICompanies, CompaniesRepository>();
             builder.Services.AddScoped<IBusinessLocations, BusinessLocationsRepository>();
 
-
-
             //Register Managers
             builder.Services.AddScoped<UserAuthenticationManager>();
             builder.Services.AddScoped<InvoiceTransactionManager>();
             builder.Services.AddScoped<CustomerManager>();
             builder.Services.AddScoped<CompanyManager>();
             builder.Services.AddScoped<BusinessLocationsManager>();
-
 
             var app = builder.Build();
 
