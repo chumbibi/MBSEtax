@@ -37,6 +37,8 @@ using static System.Net.Mime.MediaTypeNames;
 using Color = MigraDocCore.DocumentObjectModel.Color;
 using Document = MigraDocCore.DocumentObjectModel.Document;
 using Image = SixLabors.ImageSharp.Image;
+using System.Text;
+using Microsoft.AspNetCore.Mvc;
 namespace MBSWeb.Services.Repositories
 {
     public class InvoiceTransactionsRepository : IInvoiceTransactions
@@ -49,7 +51,7 @@ namespace MBSWeb.Services.Repositories
         }
 
         [HttpGet("getallinvoicesbycompany")]
-        public async Task<MBSResponse> GetAllInvoicesByCompany(int? companyId = null, string? companyCode = null, string? searchTerm = null, int pageNumber = 1, int pageSize = 10)
+        public async Task<MBSResponse> GetAllInvoicesByCompany( int? companyId = null, string? companyCode = null, string? searchTerm = null,  int pageNumber = 1,int pageSize = 10)
         {
             try
             {
@@ -342,6 +344,7 @@ namespace MBSWeb.Services.Repositories
                 return Fail($"Failed to update invoice: {ex.Message}");
             }
         }
+
 
         public async Task<MBSResponse> DownloadInvoiceByNumber(int companyid, string invoiceNumber)
         {

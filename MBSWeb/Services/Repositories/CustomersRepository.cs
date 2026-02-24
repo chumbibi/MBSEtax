@@ -70,6 +70,7 @@ namespace MBSWeb.Services.Repositories
                 customer.Street = model.Street;
                 customer.Telephone = model.Telephone;
                 customer.TIN = model.TIN;
+                 
                 customer.ActiveStatus = model.ActiveStatus;
 
                 await _context.SaveChangesAsync();
@@ -188,6 +189,57 @@ namespace MBSWeb.Services.Repositories
                 return Fail($"Search failed: {ex.Message}");
             }
         }
+        //public async Task<MBSResponse> SearchCustomersAsync(string? searchTerm)
+        //{
+        //    try
+        //    {
+        //        // If search term is null/empty/whitespace, return all customers
+        //        if (string.IsNullOrWhiteSpace(searchTerm))
+        //        {
+        //            var allCustomers = await _context.Customers
+        //                .OrderBy(c => c.CustomerCode)
+        //                .ToListAsync();
+
+        //            return Success("Customers retrieved successfully", allCustomers);
+        //        }
+
+        //        searchTerm = searchTerm.Trim();
+
+        //        // Base customer search using CONTAINS logic
+        //        var customerQuery = _context.Customers
+        //            .Where(c =>
+        //                (!string.IsNullOrEmpty(c.CustomerCode) && c.CustomerCode.Contains(searchTerm)) ||
+        //                (!string.IsNullOrEmpty(c.CustomerName) && c.CustomerName.Contains(searchTerm)) ||
+        //                (!string.IsNullOrEmpty(c.Email) && c.Email.Contains(searchTerm)) ||
+        //                (!string.IsNullOrEmpty(c.Telephone) && c.Telephone.Contains(searchTerm)) ||
+        //                (!string.IsNullOrEmpty(c.TIN) && c.TIN.Contains(searchTerm))
+        //            );
+
+        //        // IRN-based customer lookup
+        //        var irnCustomersQuery = _context.InvoiceTransactions
+        //            .Where(i => i.IRN.Contains(searchTerm))
+        //            .Select(i => i.CustomerCode)
+        //            .Distinct()
+        //            .Join(_context.Customers,
+        //                  code => code,
+        //                  customer => customer.CustomerCode,
+        //                  (code, customer) => customer);
+
+        //        // Merge and deduplicate results
+        //        var customers = await customerQuery
+        //            .Union(irnCustomersQuery)
+        //            .OrderBy(c => c.CustomerCode)
+        //            .ToListAsync();
+
+        //        return Success("Customers retrieved successfully", customers);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Fail($"Search failed: {ex.Message}");
+        //    }
+        //}
+
+
         public async Task<MBSResponse> SearchCustomersAsync(string? searchTerm, int pageNumber = 1, int pageSize = 20)
         {
             try
@@ -252,6 +304,7 @@ namespace MBSWeb.Services.Repositories
                 return Fail($"Search failed: {ex.Message}");
             }
         }
+
 
 
 
