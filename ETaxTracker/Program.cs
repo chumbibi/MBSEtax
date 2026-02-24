@@ -126,18 +126,18 @@ namespace ETaxTracker
             foreach (Companies company in Companies)
             {
 
-                customerThread = new Thread(new ParameterizedThreadStart(CustomerProcessHandler)); // Create threads based on number of companies
-                customerThread.Start(company);
+                //customerThread = new Thread(new ParameterizedThreadStart(CustomerProcessHandler)); // Create threads based on number of companies
+                //customerThread.Start(company);
 
 
-                invoiceThread = new Thread(new ParameterizedThreadStart(InvoiceProcessHandler)); // Create threads based on number of companies
-                invoiceThread.Start(company);
+                //invoiceThread = new Thread(new ParameterizedThreadStart(InvoiceProcessHandler)); // Create threads based on number of companies
+                //invoiceThread.Start(company);
 
                 //Tax Thread
 
 
-                //taxThread = new Thread(new ParameterizedThreadStart(TaxProcessHandler)); // Create threads based on number of companies
-                //taxThread.Start(company);
+                taxThread = new Thread(new ParameterizedThreadStart(TaxProcessHandler)); // Create threads based on number of companies
+                taxThread.Start(company);
 
             }
 

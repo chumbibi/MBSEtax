@@ -38,7 +38,7 @@ namespace ETaxTracker.Services
             Companies company = (Companies)source;
             _log4net.Info("Invoice Handler started for Company: " + company.CompanyName);
 
-            string newBeginTime = DateTime.Parse("2026-01-01T00:00:00Z")
+            string newBeginTime = DateTime.Parse("2026-02-18T00:00:00Z")
                 .ToString("yyyy-MM-ddTHH:mm:ssZ");
 
             string QPLastInvoiceDate = @".\Private$\" + $"{company.CompanyId}LastInvoiceSyncTime";
@@ -103,7 +103,7 @@ namespace ETaxTracker.Services
             }
             catch
             {
-                newBeginTime = DateTime.Parse("2026-01-01T00:55:00Z")
+                newBeginTime = DateTime.Parse("2026-02-18T00:55:00Z")
                     .ToString("yyyy-MM-ddTHH:mm:ssZ");
             }
 
@@ -169,7 +169,7 @@ namespace ETaxTracker.Services
 
                         try
                         {
-                            for (DateTime lower = day; lower < nextDay; lower = lower.AddMinutes(20))
+                            for (DateTime lower = day; lower < nextDay; lower = lower.AddMinutes(5))
                             {
                                 DateTime upper = lower.AddMinutes(15);
                                 if (upper > nextDay) upper = nextDay;
@@ -181,7 +181,7 @@ namespace ETaxTracker.Services
                                     $"Invoices?$select=DocEntry,DocDate,CardCode,CardName,Address," +
                                     $"DocTotal,Comments,Address,VatSum,DocumentLines" +
                                     $"&$filter=DocDate ge {from} and DocDate le {to} " +
-                                    $"&$top=1500";
+                                    $"&$top=2500";
 
 
 
@@ -283,7 +283,7 @@ namespace ETaxTracker.Services
                     _log4net.Error($"Invoice Processing for {company.CompanyName}: {ex.Message}");
                 }
 
-                Thread.Sleep(1000);
+                Thread.Sleep(10);
             }
         }
 
@@ -516,7 +516,9 @@ namespace ETaxTracker.Services
         private int LogMessageToDB(InvoiceTransactions invoice)
         {
             // 1 = Success, 2 = Already Exists, 0 = Failed
-             
+            invoice.QRCode = "";
+            invoice.IRN = "";
+
             const string sql = @"
         INSERT INTO dbo.InvoiceTransactions
         (
@@ -531,6 +533,7 @@ namespace ETaxTracker.Services
             Comments,
             TransmitStatus,
             IRN,
+            QRCode,
             IRNDate,
             EmailNotificationStatus
         )
@@ -546,6 +549,7 @@ namespace ETaxTracker.Services
             @Comments,
             @TransmitStatus,
             @IRN,
+            @QRCode,
             @IRNDate,
             @EmailNotificationStatus
         WHERE NOT EXISTS
@@ -573,6 +577,7 @@ namespace ETaxTracker.Services
                     cmd.Parameters.Add("@Comments", SqlDbType.NVarChar, -1).Value = invoice.Comments ?? string.Empty;
                     cmd.Parameters.Add("@TransmitStatus", SqlDbType.Int).Value = 0; // Not transmitted to FIRS
                     cmd.Parameters.Add("@IRN", SqlDbType.NVarChar, 100).Value = string.Empty; // IRN not generated yet
+                    cmd.Parameters.Add("@QRCode", SqlDbType.NVarChar, 100).Value = string.Empty; // IRN not generated yet                     
                     cmd.Parameters.Add("@IRNDate", SqlDbType.DateTime).Value = new DateTime(1900, 1, 1); // Sentinel date (far past)
                     cmd.Parameters.Add("@EmailNotificationStatus", SqlDbType.Int).Value = 0; // Email not sent
                     cnn.Open();
