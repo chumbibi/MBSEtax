@@ -33,8 +33,10 @@ namespace MBSWeb.Models.Entities
         public string? Street { get; set; }
 
         public string? Telephone { get; set; }
-
-        public string? TIN { get; set; }
+        public string? ContactPerson { get; set; }         
+        public string? SalesPerson { get; set; }
+        public string? SalesPersonPhone { get; set; }
+        public string? TIN { get; set; }     
 
         public int ActiveStatus { get; set; }
     }

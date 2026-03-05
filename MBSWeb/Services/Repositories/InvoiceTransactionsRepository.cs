@@ -375,7 +375,7 @@ namespace MBSWeb.Services.Repositories
                     section.PageSetup.PageFormat = PageFormat.A4;
                     section.PageSetup.TopMargin = Unit.FromCentimeter(0.5);    // 1 cm
                     section.PageSetup.BottomMargin = Unit.FromCentimeter(0.1); // 1 cm
-                    section.PageSetup.LeftMargin = Unit.FromCentimeter(0.2);   // 1.5 cm
+                    section.PageSetup.LeftMargin = Unit.FromCentimeter(0.8);   // 1.5 cm
                     section.PageSetup.RightMargin = Unit.FromCentimeter(0.8);  // 1.5 cm
 
                     // 2. Invoice Header
@@ -387,6 +387,7 @@ namespace MBSWeb.Services.Repositories
                     paragraph.Format.SpaceBefore = "0.0cm";
                     paragraph.Format.SpaceAfter = "0.1cm";
                     paragraph.Format.Alignment = ParagraphAlignment.Right;
+
 
 
                     // 2. Invoice Header
@@ -406,7 +407,7 @@ namespace MBSWeb.Services.Repositories
                     // ======================
                     var table = section.AddTable();
                     table.Borders.Width = 0; // no visible borders
-                    table.Format.Font.Name = "Candara";
+                    table.Format.Font.Name = "Garamond";
                     table.Format.Font.Size = 7;   // <-- smaller invoice body text
                     table.TopPadding = 1.5;
                     table.BottomPadding = 1.5;
@@ -430,66 +431,127 @@ namespace MBSWeb.Services.Repositories
                     row1.Cells[0].Format.Font.Bold = true;
                     row1.Cells[0].Format.Font.Color = Colors.Black;
 
-                    row1.Cells[1].AddParagraph("Qty");
-                    row1.Cells[2].AddParagraph("Unit Price");
-                    row1.Cells[3].AddParagraph("Amount");
+                    row1.Cells[1].Format.Font.Size  = 8;
+                    row1.Cells[1].Format.Font.Bold = false;
+                    row1.Cells[1].AddParagraph("Document Number");
+                    row1.Cells[2].AddParagraph("Document Date");
+                    row1.Cells[3].AddParagraph("Tin No");
 
                     // ---- Row 2 ----
                     var row2 = table.AddRow();
                     row2.Height = Unit.FromCentimeter(0.9);
-                    row2.Cells[0].AddParagraph($"ATTN: FIN/ACC");
-                    row2.Cells[0].Format.Font.Size = 8;
+                    row2.Cells[0].AddParagraph($"ATTN: {customer.ContactPerson}");
+                    row2.Cells[0].Format.Font.Size = 10;
                     row2.Cells[0].Format.Font.Bold = false;
                     row2.Cells[0].Format.Font.Color = Colors.Black;
 
-
-                    row2.Cells[1].AddParagraph(invoice.InvoiceNumber).Format.Alignment = ParagraphAlignment.Right;
+                    row2.Cells[1].Format.Font.Size = 10;
+                    row2.Cells[1].Format.Font.Bold = true;
+                    row2.Cells[1].AddParagraph(invoice.InvoiceNumber).Format.Alignment = ParagraphAlignment.Center;
 
                     string dt = DateTime.Parse(invoice.InvoiceDate.ToString()).ToString("yyyy-MM-dd");
+                    row2.Cells[2].Format.Font.Size = 10;
+                    row2.Cells[2].Format.Font.Bold = true;
                     row2.Cells[2].AddParagraph($"{dt}");
                     row2.Cells[3].AddParagraph(customer.TIN);
                     //"₦100,000"
                     // ---- Row 3 ----
                     var row3 = table.AddRow();
-                    row3.Height = Unit.FromCentimeter(0.9);
-                    row3.Cells[0].AddParagraph(invoice.CustomerAddress);
+                    row3.Height = Unit.FromCentimeter(0.5);
+                    row3.Cells[0].AddParagraph(customer.CustomerAddress);
                     row3.Cells[0].Format.Font.Size = 6;
-                    row3.Cells[0].Format.Font.Bold = false;
+                    row3.Cells[0].Format.Font.Bold = true;
                     row3.Cells[0].Format.Font.Color = Colors.DarkGray;
 
-                    row3.Cells[1].AddParagraph("1");
-                    row3.Cells[2].AddParagraph("₦150,000");
-                    row3.Cells[3].AddParagraph("₦150,000");
+                    row3.Cells[1].Format.Font.Size = 6;
+                    row3.Cells[1].AddParagraph("Salesperson").Format.Alignment = ParagraphAlignment.Left; ;
+                    row3.Cells[2].AddParagraph();
+                    row3.Cells[3].AddParagraph("Mobile No").Format.Alignment=ParagraphAlignment.Left;
 
                     // ---- Row 4 ----
                     var row4 = table.AddRow();
-                    row4.Height = Unit.FromCentimeter(0.9);
-                    row4.Cells[0].AddParagraph($"{customer.LgaCode },{customer.StateCode}"); // empty
+                    row4.Height = Unit.FromCentimeter(0.5);
+                    row4.Cells[0].Format.Font.Bold = true;
+                    row4.Cells[0].AddParagraph($"{customer.LgaCode },{customer.StateCode}, {customer.Country}"); // empty
                     row4.Cells[0].Format.Font.Size = 6;
                     row4.Cells[0].Format.Font.Bold = false;
                     row4.Cells[0].Format.Font.Color = Colors.DarkGray;
 
-                    row4.Cells[1].AddParagraph("");
-                    row4.Cells[2].AddParagraph("Subtotal:");
-                    row4.Cells[3].AddParagraph("₦350,000");
-                    row4.Cells[2].Format.Alignment = ParagraphAlignment.Right;
-                    row4.Cells[3].Format.Alignment = ParagraphAlignment.Right;
+                    row4.Cells[1].Format.Font.Size = 6;
+                    row4.Cells[1].Format.Font.Bold = true;
+                    row4.Cells[1].AddParagraph(customer.SalesPerson);
+                    row4.Cells[2].AddParagraph();
+                    row4.Cells[3].Format.Font.Bold = true;
+                    row4.Cells[3].AddParagraph(customer.SalesPersonPhone);
 
-                    // ---- Row 5 ----
-                    var row5 = table.AddRow();
-                    row5.Height = Unit.FromCentimeter(0.9);
-                    row5.Cells[0].AddParagraph(customer.Country.ToUpper()); // empty
-                    row5.Cells[0].Format.Font.Size = 6;
-                    row5.Cells[0].Format.Font.Bold = false;
-                    row5.Cells[0].Format.Font.Color = Colors.DarkGray;
-                     
 
-                    row5.Cells[1].AddParagraph("");
-                    row5.Cells[2].AddParagraph("Total:");
-                    row5.Cells[3].AddParagraph("₦350,000");
-                    row5.Format.Font.Bold = true;
-                    row5.Cells[2].Format.Alignment = ParagraphAlignment.Right;
-                    row5.Cells[3].Format.Alignment = ParagraphAlignment.Right;
+                    var table1 = section.AddTable();
+                    table1.Borders.Width = 0; // no visible borders
+                    table1.Format.Font.Name = "Garamond";
+                    table1.Format.Font.Size = 7;   // <-- smaller invoice body text
+                    table1.TopPadding = 1.5;
+                    table1.BottomPadding = 1.5;
+                    table1.LeftPadding = 3;
+                    table1.RightPadding = 3;
+                    table1.AddColumn(Unit.FromCentimeter(11)); // 55% of usable width
+                    table1.AddColumn(Unit.FromCentimeter(3));  // remaining 3 columns equally
+
+                    var rowz = table.AddRow();
+                    rowz.Height = Unit.FromCentimeter(0.9);
+
+                    rowz.Cells[0].AddParagraph("NIGERIA");
+
+                    rowz.Cells[0].Format.Font.Size = 10;
+                    rowz.Cells[0].Format.Font.Bold = true;
+                    rowz.Cells[0].Format.Font.Color = Colors.Black;
+               
+                    rowz.Cells[1].Format.Font.Size = 8;
+                    rowz.Cells[1].Format.Font.Bold = false;
+                    //rowz.Cells[1].AddParagraph("Document Number");
+                   // rowz.Cells[2].AddParagraph("Document Date");
+                    rowz.Cells[3].AddParagraph($"Currency: {"USD"}");   
+
+                    // ---- Row 2 ----
+                    var roww = table.AddRow();
+                    roww.Height = Unit.FromCentimeter(0.9);
+                    roww.Cells[0].AddParagraph("Description");
+                    roww.Cells[0].Format.Font.Size = 8;
+                    roww.Cells[0].Format.Font.Bold = false;
+                    roww.Cells[0].Format.Font.Color = Colors.Black;
+
+                    roww.Cells[1].Format.Font.Size = 10;
+                    roww.Cells[1].Format.Font.Bold = true;
+                    //roww.Cells[1].AddParagraph(invoice.InvoiceNumber).Format.Alignment = ParagraphAlignment.Center;
+
+                   // string dtt = DateTime.Parse(invoice.InvoiceDate.ToString()).ToString("yyyy-MM-dd");
+                    roww.Cells[2].Format.Font.Size = 10;
+                    roww.Cells[2].Format.Font.Bold = true;
+                   // roww.Cells[2].AddParagraph($"{dtt}");
+                    roww.Cells[3].AddParagraph("Total");
+
+
+                    var rowd = table.AddRow();
+                    rowd.Height = Unit.FromCentimeter(0.9);
+                   
+                    rowd.Height = Unit.FromCentimeter(0.9);
+                    rowd.Cells[0].AddParagraph("Item Description");
+                    rowd.Cells[0].Format.Font.Size = 8;
+                    rowd.Cells[0].Format.Font.Bold = false;
+                    rowd.Cells[0].Format.Font.Color = Colors.Black;
+
+                    roww.Cells[1].Format.Font.Size = 10;
+                    roww.Cells[1].Format.Font.Bold = true;
+                    //roww.Cells[1].AddParagraph(invoice.InvoiceNumber).Format.Alignment = ParagraphAlignment.Center;
+
+                    // string dtt = DateTime.Parse(invoice.InvoiceDate.ToString()).ToString("yyyy-MM-dd");
+                    roww.Cells[2].Format.Font.Size = 10;
+                    roww.Cells[2].Format.Font.Bold = true;
+                    // roww.Cells[2].AddParagraph($"{dtt}");
+                    roww.Cells[3].AddParagraph($"{invoice.TotalAmount}");
+
+
+
+
 
 
 
@@ -530,8 +592,8 @@ namespace MBSWeb.Services.Repositories
                         //220;
 
                         double ImageWidth = 120;
-                        double ImageHeight = 60;
-                        double y = 55;
+                        double ImageHeight = 50;
+                        double y = 40;
                         double x = (page.Width.Point + 1.5 * ImageWidth + section.PageSetup.RightMargin + section.PageSetup.LeftMargin - img.Width) / 2; // + width;
 
 
@@ -546,7 +608,7 @@ namespace MBSWeb.Services.Repositories
 
 
                     // === 8. Save and return PDF ===
-                    string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyy}.pdf";
+                    string fileName = $"invoice_{companyid.ToString()}{invoiceNumber}_{DateTime.Now:yyyyMMddhhmmssfff}.pdf";
                     string filePath = Path.Combine(Environment.CurrentDirectory, "INVDr", fileName);
 
 
@@ -565,7 +627,7 @@ namespace MBSWeb.Services.Repositories
                     {
                         var qrImage = XImage.FromStream(() => new MemoryStream(msQr.ToArray()));
 
-                        double qrSize = 45; // square size
+                        double qrSize = 50; // square size
 
                         // center horizontally
                         double xQr = (page.Width.Point - qrSize) / 2;
