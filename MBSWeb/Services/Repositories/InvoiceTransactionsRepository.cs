@@ -39,6 +39,7 @@ using Document = MigraDocCore.DocumentObjectModel.Document;
 using Image = SixLabors.ImageSharp.Image;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.SqlServer.Server;
 namespace MBSWeb.Services.Repositories
 {
     public class InvoiceTransactionsRepository : IInvoiceTransactions
@@ -360,12 +361,14 @@ namespace MBSWeb.Services.Repositories
                     var customer = await _context.Customers
                         .FirstOrDefaultAsync(c => c.CustomerCode == invoice.CustomerCode);
 
-
-
+                    string inv = invoice.InvoiceNumber.Replace("INV", "").Trim();
+                    inv= string.IsNullOrEmpty(inv) ? "0" : inv;
+                     int a = int.TryParse(inv, out int result) ? result : 0;
+                    
                     var items = await _context.ItemLines
                         .Where(i =>
                             i.CompanyId == companyid &&
-                            i.DocEntry == invoiceNumber)
+                            i.DocEntry == result.ToString())
                         .OrderBy(i => i.LineNum)
                         .ToListAsync();
 
@@ -375,8 +378,8 @@ namespace MBSWeb.Services.Repositories
                     section.PageSetup.PageFormat = PageFormat.A4;
                     section.PageSetup.TopMargin = Unit.FromCentimeter(0.5);    // 1 cm
                     section.PageSetup.BottomMargin = Unit.FromCentimeter(0.1); // 1 cm
-                    section.PageSetup.LeftMargin = Unit.FromCentimeter(0.8);   // 1.5 cm
-                    section.PageSetup.RightMargin = Unit.FromCentimeter(0.8);  // 1.5 cm
+                    section.PageSetup.LeftMargin = Unit.FromCentimeter(1.5);   // 1.5 cm
+                    section.PageSetup.RightMargin = Unit.FromCentimeter(1.5);  // 1.5 cm
 
                     // 2. Invoice Header
                     var paragraph = section.AddParagraph("INVOICE");
@@ -411,11 +414,11 @@ namespace MBSWeb.Services.Repositories
                     table.Format.Font.Size = 7;   // <-- smaller invoice body text
                     table.TopPadding = 1.5;
                     table.BottomPadding = 1.5;
-                    table.LeftPadding = 3;
-                    table.RightPadding = 3;
+                    table.LeftPadding = 5;
+                    table.RightPadding = 5;
 
                     // ---- Columns ----
-                    table.AddColumn(Unit.FromCentimeter(11)); // 55% of usable width
+                    table.AddColumn(Unit.FromCentimeter(8)); // 55% of usable width
                     table.AddColumn(Unit.FromCentimeter(3));  // remaining 3 columns equally
                     table.AddColumn(Unit.FromCentimeter(3));
                     table.AddColumn(Unit.FromCentimeter(3));
@@ -430,27 +433,32 @@ namespace MBSWeb.Services.Repositories
                     row1.Cells[0].Format.Font.Size = 10;
                     row1.Cells[0].Format.Font.Bold = true;
                     row1.Cells[0].Format.Font.Color = Colors.Black;
+                    row1.Cells[0].Format.Font.Name = "Garamond";
 
                     row1.Cells[1].Format.Font.Size  = 8;
                     row1.Cells[1].Format.Font.Bold = false;
-                    row1.Cells[1].AddParagraph("Document Number");
-                    row1.Cells[2].AddParagraph("Document Date");
-                    row1.Cells[3].AddParagraph("Tin No");
+                    row1.Cells[0].Format.Font.Name = "Garamond";
+                    row1.Cells[1].AddParagraph("Document Number").Format.Alignment = ParagraphAlignment.Left;
+                    row1.Cells[2].AddParagraph("Document Date").Format.Alignment = ParagraphAlignment.Left; ;
+                    row1.Cells[3].AddParagraph("Tin No").Format.Alignment = ParagraphAlignment.Left; ;
 
                     // ---- Row 2 ----
                     var row2 = table.AddRow();
                     row2.Height = Unit.FromCentimeter(0.9);
                     row2.Cells[0].AddParagraph($"ATTN: {customer.ContactPerson}");
-                    row2.Cells[0].Format.Font.Size = 10;
+                    row2.Cells[0].Format.Font.Size = 8;
                     row2.Cells[0].Format.Font.Bold = false;
+                    row1.Cells[0].Format.Font.Name = "Garamond";
                     row2.Cells[0].Format.Font.Color = Colors.Black;
 
-                    row2.Cells[1].Format.Font.Size = 10;
+                    row2.Cells[1].Format.Font.Size = 8;
                     row2.Cells[1].Format.Font.Bold = true;
-                    row2.Cells[1].AddParagraph(invoice.InvoiceNumber).Format.Alignment = ParagraphAlignment.Center;
+                    row1.Cells[0].Format.Font.Name = "Garamond";
+                    row2.Cells[1].AddParagraph(invoice.InvoiceNumber).Format.Alignment = ParagraphAlignment.Left;
 
                     string dt = DateTime.Parse(invoice.InvoiceDate.ToString()).ToString("yyyy-MM-dd");
-                    row2.Cells[2].Format.Font.Size = 10;
+                    row2.Cells[2].Format.Font.Size = 8;
+                    row1.Cells[0].Format.Font.Name = "Garamond";
                     row2.Cells[2].Format.Font.Bold = true;
                     row2.Cells[2].AddParagraph($"{dt}");
                     row2.Cells[3].AddParagraph(customer.TIN);
@@ -459,96 +467,200 @@ namespace MBSWeb.Services.Repositories
                     var row3 = table.AddRow();
                     row3.Height = Unit.FromCentimeter(0.5);
                     row3.Cells[0].AddParagraph(customer.CustomerAddress);
-                    row3.Cells[0].Format.Font.Size = 6;
+                    row3.Cells[0].Format.Font.Size = 8;
                     row3.Cells[0].Format.Font.Bold = true;
                     row3.Cells[0].Format.Font.Color = Colors.DarkGray;
+                    row1.Cells[0].Format.Font.Name = "Garamond";
 
-                    row3.Cells[1].Format.Font.Size = 6;
+                    row3.Cells[1].Format.Font.Size = 8;
                     row3.Cells[1].AddParagraph("Salesperson").Format.Alignment = ParagraphAlignment.Left; ;
                     row3.Cells[2].AddParagraph();
                     row3.Cells[3].AddParagraph("Mobile No").Format.Alignment=ParagraphAlignment.Left;
+                    row1.Cells[0].Format.Font.Name = "Garamond";
 
                     // ---- Row 4 ----
                     var row4 = table.AddRow();
                     row4.Height = Unit.FromCentimeter(0.5);
                     row4.Cells[0].Format.Font.Bold = true;
                     row4.Cells[0].AddParagraph($"{customer.LgaCode },{customer.StateCode}, {customer.Country}"); // empty
-                    row4.Cells[0].Format.Font.Size = 6;
+                    row4.Cells[0].Format.Font.Size = 8;
                     row4.Cells[0].Format.Font.Bold = false;
                     row4.Cells[0].Format.Font.Color = Colors.DarkGray;
+                    row1.Cells[0].Format.Font.Name = "Garamond";
 
-                    row4.Cells[1].Format.Font.Size = 6;
+                    row4.Cells[1].Format.Font.Size = 8;
                     row4.Cells[1].Format.Font.Bold = true;
                     row4.Cells[1].AddParagraph(customer.SalesPerson);
                     row4.Cells[2].AddParagraph();
                     row4.Cells[3].Format.Font.Bold = true;
                     row4.Cells[3].AddParagraph(customer.SalesPersonPhone);
 
+                    var row5 = table.AddRow();
+                    row5.Cells[0].MergeRight = 3;
+                    // Merge the first cell across the remaining 3 columns
+                    // Add text                    
+                    string countryName = customer.Country.Trim().ToUpper() == "NG" ? "NIGERIA" : customer.Country.ToUpper();                     
+                    row5.Cells[0].AddParagraph(countryName);
+                    // Optional formatting
+                    row5.Cells[0].Format.Alignment = ParagraphAlignment.Left;
 
-                    var table1 = section.AddTable();
-                    table1.Borders.Width = 0; // no visible borders
-                    table1.Format.Font.Name = "Garamond";
-                    table1.Format.Font.Size = 7;   // <-- smaller invoice body text
-                    table1.TopPadding = 1.5;
-                    table1.BottomPadding = 1.5;
-                    table1.LeftPadding = 3;
-                    table1.RightPadding = 3;
-                    table1.AddColumn(Unit.FromCentimeter(11)); // 55% of usable width
-                    table1.AddColumn(Unit.FromCentimeter(3));  // remaining 3 columns equally
+                  // blank row
+                    //string countryName =  customer.Country.Trim().Length == "NG"? "Nigeria".ToUpper(): customer.Country.ToUpper();
+                    var row6 = table.AddRow();
+                    row6.Cells[0].MergeRight = 3;
 
-                    var rowz = table.AddRow();
-                    rowz.Height = Unit.FromCentimeter(0.9);
+                    var row7 = table.AddRow();
+                    row7.Cells[0].MergeRight = 3;
 
-                    rowz.Cells[0].AddParagraph("NIGERIA");
+                    var parag = row7.Cells[0].AddParagraph();
 
-                    rowz.Cells[0].Format.Font.Size = 10;
-                    rowz.Cells[0].Format.Font.Bold = true;
-                    rowz.Cells[0].Format.Font.Color = Colors.Black;
-               
-                    rowz.Cells[1].Format.Font.Size = 8;
-                    rowz.Cells[1].Format.Font.Bold = false;
-                    //rowz.Cells[1].AddParagraph("Document Number");
-                   // rowz.Cells[2].AddParagraph("Document Date");
-                    rowz.Cells[3].AddParagraph($"Currency: {"USD"}");   
+                    // Align everything to the right
+                    parag.Format.Alignment = ParagraphAlignment.Right;
 
-                    // ---- Row 2 ----
-                    var roww = table.AddRow();
-                    roww.Height = Unit.FromCentimeter(0.9);
-                    roww.Cells[0].AddParagraph("Description");
-                    roww.Cells[0].Format.Font.Size = 8;
-                    roww.Cells[0].Format.Font.Bold = false;
-                    roww.Cells[0].Format.Font.Color = Colors.Black;
+                    // Base font
+                    parag.Format.Font.Size = 7;
 
-                    roww.Cells[1].Format.Font.Size = 10;
-                    roww.Cells[1].Format.Font.Bold = true;
-                    //roww.Cells[1].AddParagraph(invoice.InvoiceNumber).Format.Alignment = ParagraphAlignment.Center;
+                    // Normal text
+                    parag.AddText("Currency ");
 
-                   // string dtt = DateTime.Parse(invoice.InvoiceDate.ToString()).ToString("yyyy-MM-dd");
-                    roww.Cells[2].Format.Font.Size = 10;
-                    roww.Cells[2].Format.Font.Bold = true;
-                   // roww.Cells[2].AddParagraph($"{dtt}");
-                    roww.Cells[3].AddParagraph("Total");
+                    // Bold + bigger currency
+                    var currencyText = parag.AddFormattedText(items[0].Currency.ToUpper());
+                    currencyText.Bold = true;
+                    currencyText.Size = 8;
 
+                    // Products Table
+                     
+                    
 
-                    var rowd = table.AddRow();
-                    rowd.Height = Unit.FromCentimeter(0.9);
                    
-                    rowd.Height = Unit.FromCentimeter(0.9);
-                    rowd.Cells[0].AddParagraph("Item Description");
-                    rowd.Cells[0].Format.Font.Size = 8;
-                    rowd.Cells[0].Format.Font.Bold = false;
-                    rowd.Cells[0].Format.Font.Color = Colors.Black;
+                    var rowpH = table.AddRow();
+                    rowpH.Shading.Color = Colors.LightGray;
+                    rowpH.Format.Font.Size = 8;
+                    rowpH.Cells[0].AddParagraph("Item Description").Format.Alignment = ParagraphAlignment.Left;
+                    rowpH.Cells[1].AddParagraph("Price").Format.Alignment = ParagraphAlignment.Right;
+                    rowpH.Cells[2].AddParagraph("Quantity").Format.Alignment = ParagraphAlignment.Right;
+                    rowpH.Cells[3].AddParagraph("Total").Format.Alignment = ParagraphAlignment.Right;
 
-                    roww.Cells[1].Format.Font.Size = 10;
-                    roww.Cells[1].Format.Font.Bold = true;
-                    //roww.Cells[1].AddParagraph(invoice.InvoiceNumber).Format.Alignment = ParagraphAlignment.Center;
+                    int toShade = 1;
+                    foreach (var item in items)
+                    {
+                        var rowp = table.AddRow();
+                        
+                        rowp.Borders.Width = 0;
+                        
+                            rowp.Shading.Color = Colors.White;
+                        
+                        rowp.Format.Font.Size = 8;
+                        rowp.Cells[0].AddParagraph(item.ItemDescription).Format.Alignment = ParagraphAlignment.Left;
+                        rowp.Cells[1].AddParagraph(item.Price.ToString()).Format.Alignment = ParagraphAlignment.Right;
+                        rowp.Cells[2].AddParagraph(item.Quantity.ToString()).Format.Alignment = ParagraphAlignment.Right;
+                        rowp.Cells[3].AddParagraph(item.LineTotal.ToString()).Format.Alignment = ParagraphAlignment.Right;
+                    }
 
-                    // string dtt = DateTime.Parse(invoice.InvoiceDate.ToString()).ToString("yyyy-MM-dd");
-                    roww.Cells[2].Format.Font.Size = 10;
-                    roww.Cells[2].Format.Font.Bold = true;
-                    // roww.Cells[2].AddParagraph($"{dtt}");
-                    roww.Cells[3].AddParagraph($"{invoice.TotalAmount}");
+                    var tableLine = section.AddTable();
 
+                    // A4 width (21 cm) - margins (1.5 + 1.5)
+                    tableLine.AddColumn(Unit.FromCentimeter(17));
+
+                    var row = tableLine.AddRow();
+
+                    row.Cells[0].Borders.Bottom.Width = 1.0;
+                    row.Cells[0].Borders.Bottom.Color = Colors.SkyBlue;
+
+                    row.Cells[0].Format.SpaceBefore = "0.2cm";
+                    row.Cells[0].Format.SpaceAfter = "0.3cm";
+
+                    // Add a nested table for totals
+
+                    // Create the main total table
+                    var tblTotal = section.AddTable();
+                    tblTotal.Borders.Width = 0; // no visible borders
+                    tblTotal.Format.Font.Name = "Garamond";
+                    tblTotal.Format.Font.Size = 7;
+                    tblTotal.TopPadding = 1.5;
+                    tblTotal.BottomPadding = 1.5;
+                    tblTotal.LeftPadding = 5;
+                    tblTotal.RightPadding = 5;
+
+                    // Columns: left 10 cm, right 7 cm
+                    tblTotal.AddColumn(Unit.FromCentimeter(10));
+                    tblTotal.AddColumn(Unit.FromCentimeter(7));
+
+                    // Add a row
+                    var rowTotal = tblTotal.AddRow();
+
+                    // Left cell (will hold nested table)
+                    rowTotal.Cells[0].Format.Font.Size = 8;
+                    rowTotal.Cells[0].Format.Font.Bold = true;
+                    rowTotal.Cells[0].Format.Alignment = ParagraphAlignment.Left;
+
+                    // Right cell (will hold nested table)
+                    rowTotal.Cells[1].Format.Font.Size = 8;
+                    rowTotal.Cells[1].Format.Font.Bold = true;
+                    rowTotal.Cells[1].Format.Alignment = ParagraphAlignment.Right;
+
+                    // ----------------------------
+                    // Create nested table for left cell
+                    var tblLeft = rowTotal.Cells[0].Elements.AddTable();
+                    tblLeft.Borders.Width = 0;  // no borders
+                    tblLeft.AddColumn(Unit.FromCentimeter(2.5)); // first column of nested table
+                    tblLeft.AddColumn(Unit.FromCentimeter(2.5)); // second column of nested table
+                    tblLeft.AddColumn(Unit.FromCentimeter(2.5)); // Third column of nested table
+                    tblLeft.AddColumn(Unit.FromCentimeter(2.5)); // Fourth column of nested table
+
+                    // Add a row to left nested table
+                    var leftRow = tblLeft.AddRow();
+                    leftRow.Cells[0].MergeRight = 3; // merge across the entire left cell
+                    leftRow.Cells[0].Format.Font.Name = "Garamond";
+                    leftRow.Cells[0].AddParagraph("Tax Details");
+                    leftRow.Cells[0].Format.Font.Size = 7;
+                    leftRow.Cells[0].Format.Font.Bold = true;
+                     
+
+                    // Add another row if needed
+                    var leftRow2 = tblLeft.AddRow();
+                    leftRow2.Format.Font.Size = 6;
+                    leftRow2.Height = Unit.FromCentimeter(0.5);
+                    leftRow2.Shading.Color = Colors.LightGray;
+                    leftRow2.Cells[0].AddParagraph($"Tax %").Format.Alignment=  ParagraphAlignment.Left;
+                    leftRow2.Cells[1].AddParagraph("Net").Format.Alignment = ParagraphAlignment.Right;
+                    leftRow2.Cells[2].AddParagraph("Tax").Format.Alignment = ParagraphAlignment.Right;
+                    leftRow2.Cells[3].AddParagraph("Gross").Format.Alignment = ParagraphAlignment.Right;
+
+                    var leftRow3 = tblLeft.AddRow();
+                    leftRow3.Height = Unit.FromCentimeter(0.5);
+                    leftRow3.Format.Font.Size = 6;
+                    // Set bottom border for the last cell
+                    leftRow3.Borders.Bottom.Width = 1.5;                 // thickness
+                    leftRow3.Borders.Bottom.Color = Colors.SkyBlue;
+                    leftRow3.Borders.Bottom.Style = BorderStyle.Single;
+                    decimal NetAmount = invoice.TotalAmount - invoice.VatSum;
+                    decimal TaxPercent = 100 * (invoice.VatSum) / NetAmount;
+
+                    // Add data to cells
+                    leftRow3.Cells[0].AddParagraph(TaxPercent.ToString()).Format.Alignment = ParagraphAlignment.Left;
+                    leftRow3.Cells[1].AddParagraph(NetAmount.ToString()).Format.Alignment = ParagraphAlignment.Right;
+                    leftRow3.Cells[2].AddParagraph(invoice.VatSum.ToString()).Format.Alignment = ParagraphAlignment.Right;
+                    leftRow3.Cells[3].AddParagraph(invoice.TotalAmount.ToString()).Format.Alignment = ParagraphAlignment.Right;
+
+                        // color
+                      // solid line
+                    // ----------------------------
+                    // Create nested table for right cell
+                    var tblRight = rowTotal.Cells[1].Elements.AddTable();
+                    tblRight.Borders.Width = 0; // no borders
+                    tblRight.AddColumn(Unit.FromCentimeter(3.5));
+                    tblRight.AddColumn(Unit.FromCentimeter(3.5));
+
+                    // Add a row to right nested table
+                    var rightRow = tblRight.AddRow();
+                    rightRow.Cells[0].AddParagraph("Tax:");
+                    rightRow.Cells[1].AddParagraph("750");
+
+                    // Add another row
+                    var rightRow2 = tblRight.AddRow();
+                    rightRow2.Cells[0].AddParagraph("Total:");
+                    rightRow2.Cells[1].AddParagraph("10,750");
 
 
 
